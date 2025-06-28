@@ -10,10 +10,10 @@ namespace QoiSharp.Cli.Commands.Benchmarks
         public sealed class Settings : CommandSettings
         {
             [CommandArgument(0, "[ImagesDirectoryPath]")]
-            public string ImagesDirectoryPath { get; set; } = null!;
-            
+            public string ImagesDirectoryPath { get; set; } = "";
+
             [CommandArgument(1, "[ImagesCount]")]
-            public int ImagesCount { get; set; }
+            public int ImagesCount { get; set; } = 1;
 
             public override ValidationResult Validate() => this switch
             {

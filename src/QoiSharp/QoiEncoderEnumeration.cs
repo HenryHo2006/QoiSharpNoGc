@@ -6,7 +6,7 @@ namespace QoiSharp;
 /// <summary>
 /// QOI encoder.
 /// </summary>
-public static class QoiEncoder
+public static class QoiEncoderEnumeration
 {
     /// <summary>
     /// Encodes raw pixel data into QOI.
@@ -14,7 +14,7 @@ public static class QoiEncoder
     /// <param name="image">QOI image.</param>
     /// <returns>Encoded image.</returns>
     /// <exception cref="QoiEncodingException">Thrown when image information is invalid.</exception>
-    public static byte[] Encode(QoiImage image)
+    public static IEnumerable<byte> Encode(QoiImage image)
     {
         if (image.Width == 0)
         {
@@ -32,25 +32,24 @@ public static class QoiEncoder
         byte colorSpace = (byte)image.ColorSpace;
         byte[] pixels = image.Data;
 
-        byte[] bytes = new byte[QoiCodec.HeaderSize + QoiCodec.Padding.Length + (width * height * (channels + 1))];
 
-        bytes[0] = (byte)(QoiCodec.Magic >> 24);
-        bytes[1] = (byte)(QoiCodec.Magic >> 16);
-        bytes[2] = (byte)(QoiCodec.Magic >> 8);
-        bytes[3] = (byte)QoiCodec.Magic;
+        yield return (byte)(QoiCodec.Magic >> 24);
+        yield return (byte)(QoiCodec.Magic >> 16);
+        yield return (byte)(QoiCodec.Magic >> 8);
+        yield return (byte)QoiCodec.Magic;
 
-        bytes[4] = (byte)(width >> 24);
-        bytes[5] = (byte)(width >> 16);
-        bytes[6] = (byte)(width >> 8);
-        bytes[7] = (byte)width;
+        yield return (byte)(width >> 24);
+        yield return (byte)(width >> 16);
+        yield return (byte)(width >> 8);
+        yield return (byte)width;
 
-        bytes[8] = (byte)(height >> 24);
-        bytes[9] = (byte)(height >> 16);
-        bytes[10] = (byte)(height >> 8);
-        bytes[11] = (byte)height;
+        yield return (byte)(height >> 24);
+        yield return (byte)(height >> 16);
+        yield return  (byte)(height >> 8);
+        yield return  (byte)height;
 
-        bytes[12] = channels;
-        bytes[13] = colorSpace;
+        yield return  channels;
+        yield return  colorSpace;
 
         byte[] index = new byte[QoiCodec.HashTableSize * 4];
 
@@ -87,7 +86,7 @@ public static class QoiEncoder
                 run++;
                 if (run == 62 || pxPos == pixelsEnd)
                 {
-                    bytes[p++] = (byte)(QoiCodec.Run | (run - 1));
+                    yield return (byte)(QoiCodec.Run | (run - 1));
                     run = 0;
                 }
             }
@@ -95,7 +94,7 @@ public static class QoiEncoder
             {
                 if (run > 0)
                 {
-                    bytes[p++] = (byte)(QoiCodec.Run | (run - 1));
+                   yield return (byte)(QoiCodec.Run | (run - 1));
                     run = 0;
                 }
 
@@ -103,7 +102,7 @@ public static class QoiEncoder
 
                 if (RgbaEquals(r, g, b, a, index[indexPos], index[indexPos + 1], index[indexPos + 2], index[indexPos + 3]))
                 {
-                    bytes[p++] = (byte)(QoiCodec.Index | (indexPos / 4));
+                   yield return (byte)(QoiCodec.Index | (indexPos / 4));
                 }
                 else
                 {
@@ -126,31 +125,31 @@ public static class QoiEncoder
                             vb is > -3 and < 2)
                         {
                             counter++;
-                            bytes[p++] = (byte)(QoiCodec.Diff | (vr + 2) << 4 | (vg + 2) << 2 | (vb + 2));
+                           yield return (byte)(QoiCodec.Diff | (vr + 2) << 4 | (vg + 2) << 2 | (vb + 2));
                         }
                         else if (vgr is > -9 and < 8 &&
                                  vg is > -33 and < 32 &&
                                  vgb is > -9 and < 8
                                 )
                         {
-                            bytes[p++] = (byte)(QoiCodec.Luma | (vg + 32));
-                            bytes[p++] = (byte)((vgr + 8) << 4 | (vgb + 8));
+                           yield return (byte)(QoiCodec.Luma | (vg + 32));
+                           yield return (byte)((vgr + 8) << 4 | (vgb + 8));
                         }
                         else
                         {
-                            bytes[p++] = QoiCodec.Rgb;
-                            bytes[p++] = r;
-                            bytes[p++] = g;
-                            bytes[p++] = b;
+                           yield return QoiCodec.Rgb;
+                           yield return r;
+                           yield return g;
+                           yield return b;
                         }
                     }
                     else
                     {
-                        bytes[p++] = QoiCodec.Rgba;
-                        bytes[p++] = r;
-                        bytes[p++] = g;
-                        bytes[p++] = b;
-                        bytes[p++] = a;
+                       yield return QoiCodec.Rgba;
+                       yield return r;
+                       yield return g;
+                       yield return b;
+                       yield return a;
                     }
                 }
             }
@@ -163,12 +162,11 @@ public static class QoiEncoder
 
         for (int padIdx = 0; padIdx < QoiCodec.Padding.Length; padIdx++)
         {
-            bytes[p + padIdx] = QoiCodec.Padding[padIdx];
+            yield return QoiCodec.Padding[padIdx];
         }
 
         p += QoiCodec.Padding.Length;
 
-        return bytes[..p];
     }
 
     private static bool RgbaEquals(byte r1, byte g1, byte b1, byte a1, byte r2, byte g2, byte b2, byte a2) =>
