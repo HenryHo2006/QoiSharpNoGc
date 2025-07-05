@@ -41,11 +41,11 @@ public static class QoiEncoderFaster2
         int pixelsLength = width * height * channels;
         if (channels == 4)
         {
-            p= RunRgbaCompression(pixels, bytes, p, pixelsLength);
+            p = RunRgbaCompression(pixels, bytes, p, pixelsLength);
         }
         else
         {
-            p=RunRgbCompression(pixels, bytes, p, pixelsLength);
+            p = RunRgbCompression(pixels, bytes, p, pixelsLength);
         }
         for (int padIdx = 0; padIdx < QoiCodec.Padding.Length; padIdx++)
         {
@@ -95,7 +95,31 @@ public static class QoiEncoderFaster2
                         int vr = (i >> 24) - (prevI >> 24);
                         int vg = ((i >> 16) & 0xFF) - ((prevI >> 16) & 0xFF);
                         int vb = ((i >> 8) & 0xFF) - ((prevI >> 8) & 0xFF);
-                        p = AddDiffOrLuma(bytes, i, p, vr, vg, vb);
+                        if (vr is > -3 and < 2 &&
+                            vg is > -3 and < 2 &&
+                            vb is > -3 and < 2)
+                        {
+                            bytes[p++] = (byte)(QoiCodec.Diff | (vr + 2) << 4 | (vg + 2) << 2 | (vb + 2));
+                        }
+                        else
+                        {
+                            int vgr = vr - vg;
+                            int vgb = vb - vg;
+                            if (vgr is > -9 and < 8 &&
+                                 vg is > -33 and < 32 &&
+                                 vgb is > -9 and < 8)
+                            {
+                                bytes[p++] = (byte)(QoiCodec.Luma | (vg + 32));
+                                bytes[p++] = (byte)((vgr + 8) << 4 | (vgb + 8));
+                            }
+                            else
+                            {
+                                bytes[p++] = QoiCodec.Rgb;
+                                bytes[p++] = (byte)(i >> 24);
+                                bytes[p++] = (byte)(i >> 16);
+                                bytes[p++] = (byte)(i >> 8);
+                            }
+                        }
                     }
                     else
                     {
@@ -142,8 +166,7 @@ public static class QoiEncoderFaster2
                     run = 0;
                 }
 
-                int indexPos = QoiCodec.CalculateHashTableIndex(i);
-
+                int indexPos = QoiCodec.CalculateHashTableRgbIndex(i);
                 if (i == intIndex[indexPos])
                 {
                     bytes[p++] = (byte)(QoiCodec.Index | (indexPos));
@@ -154,7 +177,32 @@ public static class QoiEncoderFaster2
                     int vr = (i >> 16) - (prevI >> 16);
                     int vg = ((i >> 8) & 0xFF) - ((prevI >> 8) & 0xFF);
                     int vb = (i & 0xFF) - (prevI & 0xFF);
-                    p = AddDiffOrLuma(bytes, i, p, vr, vg, vb);
+
+                    if (vr is > -3 and < 2 &&
+                        vg is > -3 and < 2 &&
+                        vb is > -3 and < 2)
+                    {
+                        bytes[p++] = (byte)(QoiCodec.Diff | (vr + 2) << 4 | (vg + 2) << 2 | (vb + 2));
+                    }
+                    else
+                    {
+                        int vgr = vr - vg;
+                        int vgb = vb - vg;
+                        if (vgr is > -9 and < 8 &&
+                             vg is > -33 and < 32 &&
+                             vgb is > -9 and < 8)
+                        {
+                            bytes[p++] = (byte)(QoiCodec.Luma | (vg + 32));
+                            bytes[p++] = (byte)((vgr + 8) << 4 | (vgb + 8));
+                        }
+                        else
+                        {
+                            bytes[p++] = QoiCodec.Rgb;
+                            bytes[p++] = (byte)(i >> 16);
+                            bytes[p++] = (byte)(i >> 8);
+                            bytes[p++] = (byte)i;
+                        }
+                    }
                 }
             }
             prevI = i;
@@ -188,34 +236,5 @@ public static class QoiEncoderFaster2
         bytes[13] = colorSpace;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static int AddDiffOrLuma(byte[] bytes, int i, int p, int vr, int vg, int vb)
-    {
-        if (vr is > -3 and < 2 &&
-            vg is > -3 and < 2 &&
-            vb is > -3 and < 2)
-        {
-            bytes[p++] = (byte)(QoiCodec.Diff | (vr + 2) << 4 | (vg + 2) << 2 | (vb + 2));
-        }
-        else
-        {
-            int vgr = vr - vg;
-            int vgb = vb - vg;
-            if (vgr is > -9 and < 8 &&
-                 vg is > -33 and < 32 &&
-                 vgb is > -9 and < 8)
-            {
-                bytes[p++] = (byte)(QoiCodec.Luma | (vg + 32));
-                bytes[p++] = (byte)((vgr + 8) << 4 | (vgb + 8));
-            }
-            else
-            {
-                bytes[p++] = QoiCodec.Rgb;
-                bytes[p++] = (byte)(i >> 24);
-                bytes[p++] = (byte)(i >> 16);
-                bytes[p++] = (byte)(i >> 8);
-            }
-        }
-        return p;
-    }
+
 }

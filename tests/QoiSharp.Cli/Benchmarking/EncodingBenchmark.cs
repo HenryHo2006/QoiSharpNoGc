@@ -24,6 +24,25 @@ namespace QoiSharp.Cli.Benchmarking;
 | 'Fastest encoding code' |      Run |  24.39 us | 25.445 us | 1.395 us |  9.7961 |       - |     81 KB |
 
 
+|                   Method | dataType |         Mean |        Error |      StdDev |   Gen 0 |   Gen 1 |   Gen 2 | Allocated |
+|------------------------- |--------- |-------------:|-------------:|------------:|--------:|--------:|--------:|----------:|
+|     'Nice encoding code' |    Index |  87,861.4 ns | 21,830.75 ns | 1,196.62 ns | 12.0850 | 11.9629 |       - |    101 KB |
+|  'Fastest encoding code' |    Index |  54,582.9 ns | 85,258.09 ns | 4,673.28 ns | 12.1460 | 12.0850 |       - |    101 KB |
+| 'Streamed encoding code' |    Index |     174.3 ns |    411.22 ns |    22.54 ns |  0.3049 |  0.0017 |       - |      2 KB |
+|     'Nice encoding code' |     Luma |  91,693.9 ns | 23,934.30 ns | 1,311.92 ns | 12.0850 | 11.9629 |       - |    101 KB |
+|  'Fastest encoding code' |     Luma |  45,483.8 ns | 21,583.04 ns | 1,183.04 ns | 12.1460 | 12.0850 |       - |    101 KB |
+| 'Streamed encoding code' |     Luma |     133.0 ns |     18.19 ns |     1.00 ns |  0.3049 |  0.0017 |       - |      2 KB |
+|     'Nice encoding code' |      Rgb | 169,000.6 ns | 33,553.36 ns | 1,839.17 ns | 19.5313 | 19.2871 |       - |    161 KB |
+|  'Fastest encoding code' |      Rgb | 149,306.4 ns |  9,731.79 ns |   533.43 ns | 19.5313 | 19.2871 |       - |    161 KB |
+| 'Streamed encoding code' |      Rgb |     146.7 ns |     66.14 ns |     3.63 ns |  0.3049 |  0.0017 |       - |      2 KB |
+|     'Nice encoding code' |     Rgba | 120,493.5 ns | 14,759.49 ns |   809.02 ns | 62.2559 | 62.2559 | 62.2559 |    201 KB |
+|  'Fastest encoding code' |     Rgba |  93,670.5 ns | 33,561.69 ns | 1,839.63 ns | 62.5000 | 62.3779 | 62.3779 |    201 KB |
+| 'Streamed encoding code' |     Rgba |     133.7 ns |     35.04 ns |     1.92 ns |  0.3107 |  0.0014 |       - |      3 KB |
+|     'Nice encoding code' |      Run |  47,966.3 ns | 40,303.04 ns | 2,209.15 ns |  9.7656 |  0.1831 |       - |     81 KB |
+|  'Fastest encoding code' |      Run |  25,590.2 ns |  2,731.75 ns |   149.74 ns |  9.7961 |  0.0916 |       - |     81 KB |
+| 'Streamed encoding code' |      Run |     157.7 ns |    497.80 ns |    27.29 ns |  0.3049 |  0.0017 |       - |      2 KB |
+
+
 |                  Method | dataType |      Mean |      Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 | Allocated |
 |------------------------ |--------- |----------:|-----------:|----------:|---------:|---------:|---------:|----------:|
 |   'Nice encdoding code' |    Index | 11.901 ms | 13.7039 ms | 0.7512 ms | 125.0000 | 125.0000 | 125.0000 |     10 MB |
@@ -35,29 +54,40 @@ namespace QoiSharp.Cli.Benchmarking;
 |   'Nice encdoding code' |      Run |  3.376 ms |  0.3133 ms | 0.0172 ms | 402.3438 | 398.4375 | 398.4375 |      8 MB |
 | 'Faster encdoding code' |      Run |  3.469 ms |  2.5499 ms | 0.1398 ms | 402.3438 | 398.4375 | 398.4375 |      8 MB |
 
+|                   Method | dataType |      Mean |     Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 | Allocated |
+|------------------------- |--------- |----------:|----------:|----------:|---------:|---------:|---------:|----------:|
+|     'Nice encoding code' |     Luma | 10.374 ms | 2.2025 ms | 0.1207 ms | 140.6250 | 140.6250 | 140.6250 |     10 MB |
+|  'Fastest encoding code' |     Luma |  5.700 ms | 5.0335 ms | 0.2759 ms | 140.6250 | 140.6250 | 140.6250 |     10 MB |
+| 'Streamed encoding code' |     Luma |  6.140 ms | 2.3868 ms | 0.1308 ms | 335.9375 | 320.3125 | 320.3125 |      4 MB |
+|     'Nice encoding code' | RgbaLuma | 10.108 ms | 4.7563 ms | 0.2607 ms | 140.6250 | 140.6250 | 140.6250 |     12 MB |
+|  'Fastest encoding code' | RgbaLuma |  6.625 ms | 2.2326 ms | 0.1224 ms | 203.1250 | 203.1250 | 203.1250 |     12 MB |
+| 'Streamed encoding code' | RgbaLuma |  6.834 ms | 0.3298 ms | 0.0181 ms | 367.1875 | 351.5625 | 351.5625 |      4 MB |
+
 */
 [Config(typeof(ShortRunConfig))]
 public class EncodingBenchmark
 {
-    [Params(nameof(QoiCodec.Run), nameof(QoiCodec.Rgb), nameof(QoiCodec.Index), nameof(QoiCodec.Luma), nameof(QoiCodec.Rgba))]
-    // [Params(nameof(QoiCodec.Run), nameof(QoiCodec.Rgba), nameof(QoiCodec.Luma), "Alpha150")]
+    // [Params(nameof(QoiCodec.Run), nameof(QoiCodec.Rgb), nameof(QoiCodec.Index), nameof(QoiCodec.Luma), "RgbaIndex"))]
+    // [Params(nameof(QoiCodec.Run), "RgbaRun", "RgbaAlphaRandomRun", nameof(QoiCodec.Index), "RgbaIndex", nameof(QoiCodec.Luma), "RgbaLuma")]
     // [Params(nameof(QoiCodec.Run))]
-    // [Params(nameof(QoiCodec.Rgb))]
-    // [Params(nameof(QoiCodec.Luma))]
-    public string? dataType;
+    // [Params(nameof(QoiCodec.Rgba))]
+    [Params(nameof(QoiCodec.Luma),"RgbaLuma")]
+    public string dataType = "";
 
     [GlobalSetup]
     public void Setup()
     {
-        var height = 108;
-        var width = 190;
+        var height = 1080;
+        var width = 1900;
         var data = new byte[height * width * 3];
-        if (dataType == nameof(QoiCodec.Rgba) || dataType == "Alpha150")
+        var channel = Channels.Rgb;
+        if (dataType.StartsWith(nameof(QoiCodec.Rgba)))
         {
+            channel = Channels.RgbWithAlpha;
             data = new byte[height * width * 4];
             var random = new Random();
             random.NextBytes(data);
-            if (dataType == "Alpha150")
+            if (!dataType.Contains("AlphaRandom"))
             {
                 for (int i = 3; i < data.Length; i += 4)
                 {
@@ -65,7 +95,7 @@ public class EncodingBenchmark
                 }
             }
         }
-        else if (dataType == nameof(QoiCodec.Rgb))
+        if (dataType == nameof(QoiCodec.Rgb))
         {
             var random = new Random();
             random.NextBytes(data);
@@ -74,35 +104,45 @@ public class EncodingBenchmark
         {
             byte[] indexData = [12, 34, 56, 153, 232, 12, 76, 87, 87];
             byte[] lumaData = [12, 34, 56, 20, 40, 60, 10, 30, 50];
+            var index = 0;
             for (var i = 0; i < data.Length; i += 3)
             {
-                switch (dataType)
+                if (dataType.Contains(nameof(QoiCodec.Run)))
                 {
-                    case nameof(QoiCodec.Run):
-                        data[i] = 12;
-                        data[i + 1] = 34;
-                        data[i + 2] = 56;
-                        break;
-                    case nameof(QoiCodec.Index):
-                        data[i] = indexData[i % 9];
-                        data[i + 1] = indexData[i % 9 + 1];
-                        data[i + 2] = indexData[i % 9 + 2];
-                        break;
-                    case nameof(QoiCodec.Luma):
-                        data[i] = lumaData[i % 9];
-                        data[i + 1] = lumaData[i % 9 + 1];
-                        data[i + 2] = lumaData[i % 9 + 2];
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(dataType), "Invalid data type");
+                    data[i] = 12;
+                    data[i + 1] = 34;
+                    data[i + 2] = 56;
                 }
+                else if (dataType.Contains(nameof(QoiCodec.Index)))
+                {
+                    data[i] = indexData[index % 9];
+                    data[i + 1] = indexData[index % 9 + 1];
+                    data[i + 2] = indexData[index % 9 + 2];
+                }
+                else if (dataType.Contains(nameof(QoiCodec.Luma)))
+                {
+                    data[i] = lumaData[index % 9];
+                    data[i + 1] = lumaData[index % 9 + 1];
+                    data[i + 2] = lumaData[index % 9 + 2];
+                }
+                index += 3;
+                if (dataType.StartsWith(nameof(QoiCodec.Rgba)))
+                { i++; }
             }
         }
-        Image = new QoiImage(data, width, height, Channels.Rgb);
+        Image = new QoiImage(data, width, height, channel);
+        ImageDataStream = new MemoryStream(data);
+        compressedSize = QoiEncoder.Encode(Image).Length;
+    }
+    [RunOncePerIteration]
+    public void TestSettup()
+    {
+        ImageDataStream = new MemoryStream(Image.Data);
     }
 
     public QoiImage Image = new QoiImage([], 0, 0, Channels.Rgb);
-
+    public MemoryStream ImageDataStream = new MemoryStream();
+    private int compressedSize = 0;
     [Benchmark(Description = "Nice encoding code")]
     public byte[] NiceEncoding()
     {
@@ -110,58 +150,26 @@ public class EncodingBenchmark
     }
 
     [Benchmark(Description = "Fasterx encoding code")]
-    public byte[] EnumerationEncoding2()
+    public byte[] FasterEncoding()
     {
         return QoiEncoderFaster.Encode(Image);
     }
 
     [Benchmark(Description = "Fastest encoding code")]
-    public byte[] EnumerationEncoding()
+    public byte[] FastestEncoding()
     {
         return QoiEncoderFaster2.Encode(Image);
     }
 
-    /*
-    |                      Method | dataType |      Mean |     Error |    StdDev |    Median | Allocated |
-    |---------------------------- |--------- |----------:|----------:|----------:|----------:|----------:|
-    |           'RgbaEquals quad' |      Run | 0.0032 ns | 0.0750 ns | 0.0041 ns | 0.0015 ns |         - |
-    | 'RgbaEquals quad firstFail' |      Run | 0.0000 ns | 0.0000 ns | 0.0000 ns | 0.0000 ns |         - |
-    |     'RgbaEquals int inline' |      Run | 0.0066 ns | 0.1092 ns | 0.0060 ns | 0.0070 ns |         - |
-    */
-
-    // [Benchmark(Description = "RgbaEquals quad")]
-    // public bool RgbaEquals1Test()
-    // {
-    //     var data = RgbaEqualsInline(1, 2, 3, 4, 1, 2, 3, 4);
-    //     return data;
-    // }
-
-    // [Benchmark(Description = "RgbaEquals quad firstFail")]
-    // public bool RgbaEquals1Test2()
-    // {
-    //     var data = RgbaEqualsInline(1, 2, 3, 4, 2, 2, 3, 4);
-    //     return data;
-    // }
-
-    // [Benchmark(Description = "RgbaEquals int inline")]
-    // public bool RgbaEqualsInline22Test()
-    // {
-    //     var data = RgbaEqualsInline2(1, 2, 3, 4, 1, 2, 3, 4);
-    //     return data;
-    // }
-
-    // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    // private static bool RgbaEqualsInline(byte r1, byte g1, byte b1, byte a1, byte r2, byte g2, byte b2, byte a2) =>
-    //         r1 == r2 &&
-    //         g1 == g2 &&
-    //         b1 == b2 &&
-    //         a1 == a2;
-
-    // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    // private static bool RgbaEqualsInline2(byte r1, byte g1, byte b1, byte a1, byte r2, byte g2, byte b2, byte a2)
-    // {
-    //     var i1 = r1 << 24 | g1 << 16 | b1 << 8 | a1;
-    //     var i2 = r2 << 24 | g2 << 16 | b2 << 8 | a2;
-    //     return i1 == i2;
-    // }
+    [Benchmark(Description = "Streamed encoding code")]
+    public Stream StreamEncoding()
+    {
+        ImageDataStream.Position = 0;
+        return QoiEncoderStream.Encode(Image, ImageDataStream);
+        // if (bytes.Length != compressedSize)
+        // {
+        //     throw new Exception($"Compressed size mismatch: expected {compressedSize}, got {bytes.Length}");
+        // }
+        // return bytes;
+    }
 }

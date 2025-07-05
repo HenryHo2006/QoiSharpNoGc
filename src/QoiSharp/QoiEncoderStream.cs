@@ -21,7 +21,6 @@ public static class QoiEncoderStream
         {
             throw new QoiEncodingException($"Invalid width: {image.Width}");
         }
-
         if (image.Height == 0 || image.Height >= QoiCodec.MaxPixels / image.Width)
         {
             throw new QoiEncodingException($"Invalid height: {image.Height}. Maximum for this image is {QoiCodec.MaxPixels / image.Width - 1}");
@@ -31,17 +30,18 @@ public static class QoiEncoderStream
         int height = image.Height;
         byte channels = (byte)image.Channels;
         byte colorSpace = (byte)image.ColorSpace;
-        byte[] pixels = new byte[1020];
-
-        // byte[] bytes = new byte[width * height * (channels + 1)];
+        var bufferSize = 300; //1020 bytes as a minimal size 
+        var readArraySize = channels == 4 ? (bufferSize / 5 * 4) : (bufferSize / 4 * 3);
+        byte[] pixels = new byte[readArraySize];
 
         var outputStream = new MemoryStream();
         WriteHeader(outputStream, width, height, channels, colorSpace);
 
-        int p = QoiCodec.HeaderSize;
-        int pixelsLength = width * height * channels;
-        byte[] bytes = new byte[1020];
+        byte[] bytes = new byte[bufferSize];
         int read = 0;
+        int run = 0;
+        int prevI = channels == 4 ? 255 : 0;
+        int[] intIndex = new int[QoiCodec.HashTableSize];
         do
         {
             read = imageByteStream.Read(pixels, 0, pixels.Length);
@@ -49,34 +49,31 @@ public static class QoiEncoderStream
             {
                 break; // End of stream
             }
-            if (read < pixels.Length)
+            if (channels == 4)
             {
-                Array.Resize(ref pixels, read);
+                (prevI, run) = RunRgbaCompression(pixels, read, bytes, outputStream, intIndex, prevI, run);
+            }
+            else
+            {
+                (prevI, run) = RunRgbCompression(pixels, read, bytes, outputStream, intIndex, prevI, run);
             }
         }
-        while (read == pixels.Length);
-        if (channels == 4)
+        while (read == readArraySize);
+
+        if (run > 0)
         {
-            p = RunRgbaCompression(pixels, bytes, p, pixelsLength);
+            outputStream.WriteByte((byte)(QoiCodec.Run | (run - 1)));
         }
-        else
-        {
-            p = RunRgbCompression(pixels, bytes, p, pixelsLength);
-        }
-        for (int padIdx = 0; padIdx < QoiCodec.Padding.Length; padIdx++)
-        {
-            bytes[p + padIdx] = QoiCodec.Padding[padIdx];
-        }
-        p += QoiCodec.Padding.Length;
+        outputStream.Write(QoiCodec.Padding, 0, QoiCodec.Padding.Length);
+        outputStream.Position = 0;
         return outputStream;
     }
 
-    private static int RunRgbaCompression(byte[] pixels, byte[] bytes, int p, int pixelsLength)
+    private static (int, int) RunRgbaCompression(byte[] pixels, int pixelsLength, byte[] outputBytes, MemoryStream outputStream,
+        int[] intIndex, int prevI, int run)
     {
-        int[] intIndex = new int[QoiCodec.HashTableSize];
-        int run = 0;
-        int prevI = 255;
-        int i = 255;
+        int p = 0;
+        int i = 0;
         for (int pxPos = 0; pxPos < pixelsLength; pxPos += 4)
         {
             i = pixels[pxPos] << 24 | pixels[pxPos + 1] << 16 | pixels[pxPos + 2] << 8 | pixels[pxPos + 3];
@@ -85,7 +82,7 @@ public static class QoiEncoderStream
                 run++;
                 if (run == 62)
                 {
-                    bytes[p++] = (byte)(QoiCodec.Run | (run - 1));
+                    outputBytes[p++] = (byte)(QoiCodec.Run | (run - 1));
                     run = 0;
                 }
             }
@@ -93,15 +90,13 @@ public static class QoiEncoderStream
             {
                 if (run > 0)
                 {
-                    bytes[p++] = (byte)(QoiCodec.Run | (run - 1));
+                    outputBytes[p++] = (byte)(QoiCodec.Run | (run - 1));
                     run = 0;
                 }
-
                 int indexPos = QoiCodec.CalculateHashTableIndex(i);
-
                 if (i == intIndex[indexPos])
                 {
-                    bytes[p++] = (byte)(QoiCodec.Index | (indexPos));
+                    outputBytes[p++] = (byte)(QoiCodec.Index | (indexPos));
                 }
                 else
                 {
@@ -111,32 +106,52 @@ public static class QoiEncoderStream
                         int vr = (i >> 24) - (prevI >> 24);
                         int vg = ((i >> 16) & 0xFF) - ((prevI >> 16) & 0xFF);
                         int vb = ((i >> 8) & 0xFF) - ((prevI >> 8) & 0xFF);
-                        p = AddDiffOrLuma(bytes, i, p, vr, vg, vb);
+                        if (vr is > -3 and < 2 &&
+                            vg is > -3 and < 2 &&
+                            vb is > -3 and < 2)
+                        {
+                            outputBytes[p++] = (byte)(QoiCodec.Diff | (vr + 2) << 4 | (vg + 2) << 2 | (vb + 2));
+                        }
+                        else
+                        {
+                            int vgr = vr - vg;
+                            int vgb = vb - vg;
+                            if (vgr is > -9 and < 8 &&
+                                 vg is > -33 and < 32 &&
+                                 vgb is > -9 and < 8)
+                            {
+                                outputBytes[p++] = (byte)(QoiCodec.Luma | (vg + 32));
+                                outputBytes[p++] = (byte)((vgr + 8) << 4 | (vgb + 8));
+                            }
+                            else
+                            {
+                                outputBytes[p++] = QoiCodec.Rgb;
+                                outputBytes[p++] = (byte)(i >> 24);
+                                outputBytes[p++] = (byte)(i >> 16);
+                                outputBytes[p++] = (byte)(i >> 8);
+                            }
+                        }
                     }
                     else
                     {
-                        bytes[p++] = QoiCodec.Rgba;
-                        bytes[p++] = (byte)(i >> 24);
-                        bytes[p++] = (byte)(i >> 16);
-                        bytes[p++] = (byte)(i >> 8);
-                        bytes[p++] = (byte)i;
+                        outputBytes[p++] = QoiCodec.Rgba;
+                        outputBytes[p++] = (byte)(i >> 24);
+                        outputBytes[p++] = (byte)(i >> 16);
+                        outputBytes[p++] = (byte)(i >> 8);
+                        outputBytes[p++] = (byte)i;
                     }
                 }
             }
             prevI = i;
         }
-        if (run > 0)
-        {
-            bytes[p++] = (byte)(QoiCodec.Run | (run - 1));
-        }
-        return p;
+        outputStream.Write(outputBytes, 0, p);
+        return (prevI, run);
     }
 
-    private static int RunRgbCompression(byte[] pixels, byte[] bytes, int p, int pixelsLength)
+    private static (int, int) RunRgbCompression(byte[] pixels, int pixelsLength, byte[] outputBytes, MemoryStream outputStream,
+        int[] intIndex, int prevI, int run)
     {
-        int[] intIndex = new int[QoiCodec.HashTableSize];
-        int run = 0;
-        int prevI = 0;
+        int p = 0;
         int i = 0;
         for (int pxPos = 0; pxPos < pixelsLength; pxPos += 3)
         {
@@ -146,7 +161,7 @@ public static class QoiEncoderStream
                 run++;
                 if (run == 62)
                 {
-                    bytes[p++] = (byte)(QoiCodec.Run | (run - 1));
+                    outputBytes[p++] = (byte)(QoiCodec.Run | (run - 1));
                     run = 0;
                 }
             }
@@ -154,15 +169,13 @@ public static class QoiEncoderStream
             {
                 if (run > 0)
                 {
-                    bytes[p++] = (byte)(QoiCodec.Run | (run - 1));
+                    outputBytes[p++] = (byte)(QoiCodec.Run | (run - 1));
                     run = 0;
                 }
-
-                int indexPos = QoiCodec.CalculateHashTableIndex(i);
-
+                int indexPos = QoiCodec.CalculateHashTableRgbIndex(i);
                 if (i == intIndex[indexPos])
                 {
-                    bytes[p++] = (byte)(QoiCodec.Index | (indexPos));
+                    outputBytes[p++] = (byte)(QoiCodec.Index | (indexPos));
                 }
                 else
                 {
@@ -170,19 +183,39 @@ public static class QoiEncoderStream
                     int vr = (i >> 16) - (prevI >> 16);
                     int vg = ((i >> 8) & 0xFF) - ((prevI >> 8) & 0xFF);
                     int vb = (i & 0xFF) - (prevI & 0xFF);
-                    p = AddDiffOrLuma(bytes, i, p, vr, vg, vb);
+                    if (vr is > -3 and < 2 &&
+                        vg is > -3 and < 2 &&
+                        vb is > -3 and < 2)
+                    {
+                        outputBytes[p++] = (byte)(QoiCodec.Diff | (vr + 2) << 4 | (vg + 2) << 2 | (vb + 2));
+                    }
+                    else
+                    {
+                        int vgr = vr - vg;
+                        int vgb = vb - vg;
+                        if (vgr is > -9 and < 8 &&
+                             vg is > -33 and < 32 &&
+                             vgb is > -9 and < 8)
+                        {
+                            outputBytes[p++] = (byte)(QoiCodec.Luma | (vg + 32));
+                            outputBytes[p++] = (byte)((vgr + 8) << 4 | (vgb + 8));
+                        }
+                        else
+                        {
+                            outputBytes[p++] = QoiCodec.Rgb;
+                            outputBytes[p++] = (byte)(i >> 16);
+                            outputBytes[p++] = (byte)(i >> 8);
+                            outputBytes[p++] = (byte)i;
+                        }
+                    }
                 }
             }
             prevI = i;
         }
-        if (run > 0)
-        {
-            bytes[p++] = (byte)(QoiCodec.Run | (run - 1));
-        }
-        return p;
+        outputStream.Write(outputBytes, 0, p);
+        return (prevI, run);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void WriteHeader(MemoryStream outputStream, int width, int height, byte channels, byte colorSpace)
     {
         var bytes = new byte[QoiCodec.HeaderSize];
@@ -205,36 +238,5 @@ public static class QoiEncoderStream
         bytes[13] = colorSpace;
 
         outputStream.Write(bytes, 0, bytes.Length);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static int AddDiffOrLuma(byte[] bytes, int i, int p, int vr, int vg, int vb)
-    {
-        if (vr is > -3 and < 2 &&
-            vg is > -3 and < 2 &&
-            vb is > -3 and < 2)
-        {
-            bytes[p++] = (byte)(QoiCodec.Diff | (vr + 2) << 4 | (vg + 2) << 2 | (vb + 2));
-        }
-        else
-        {
-            int vgr = vr - vg;
-            int vgb = vb - vg;
-            if (vgr is > -9 and < 8 &&
-                 vg is > -33 and < 32 &&
-                 vgb is > -9 and < 8)
-            {
-                bytes[p++] = (byte)(QoiCodec.Luma | (vg + 32));
-                bytes[p++] = (byte)((vgr + 8) << 4 | (vgb + 8));
-            }
-            else
-            {
-                bytes[p++] = QoiCodec.Rgb;
-                bytes[p++] = (byte)(i >> 24);
-                bytes[p++] = (byte)(i >> 16);
-                bytes[p++] = (byte)(i >> 8);
-            }
-        }
-        return p;
     }
 }
