@@ -6,7 +6,7 @@ namespace QoiSharp;
 /// <summary>
 /// QOI decoder.
 /// </summary>
-public static class QoiDecoder 
+public static class QoiDecoder
 {
     /// <summary>
     /// Decodes QOI data into raw pixel data.
@@ -20,7 +20,7 @@ public static class QoiDecoder
         {
             throw new QoiDecodingException("File too short");
         }
-        
+
         if (!QoiCodec.IsValidMagic(data[..4]))
         {
             throw new QoiDecodingException("Invalid file magic"); // TODO: add magic value
@@ -28,7 +28,7 @@ public static class QoiDecoder
 
         int width = data[4] << 24 | data[5] << 16 | data[6] << 8 | data[7];
         int height = data[8] << 24 | data[9] << 16 | data[10] << 8 | data[11];
-        byte channels = data[12]; 
+        byte channels = data[12];
         var colorSpace = (ColorSpace)data[13];
 
         if (width == 0)
@@ -43,7 +43,7 @@ public static class QoiDecoder
         {
             throw new QoiDecodingException($"Invalid number of channels: {channels}");
         }
-        
+
         byte[] index = new byte[QoiCodec.HashTableSize * 4];
         if (channels == 3) // TODO: delete
         {
@@ -54,12 +54,12 @@ public static class QoiDecoder
         }
 
         byte[] pixels = new byte[width * height * channels];
-        
+
         byte r = 0;
         byte g = 0;
         byte b = 0;
         byte a = 255;
-        
+
         int run = 0;
         int p = QoiCodec.HeaderSize;
 
@@ -100,7 +100,7 @@ public static class QoiDecoder
                     g += (byte)(((b1 >> 2) & 0x03) - 2);
                     b += (byte)((b1 & 0x03) - 2);
                 }
-                else if ((b1 & QoiCodec.Mask2) == QoiCodec.Luma) 
+                else if ((b1 & QoiCodec.Mask2) == QoiCodec.Luma)
                 {
                     int b2 = data[p++];
                     int vg = (b1 & 0x3F) - 32;
@@ -108,11 +108,11 @@ public static class QoiDecoder
                     g += (byte)vg;
                     b += (byte)(vg - 8 + (b2 & 0x0F));
                 }
-                else if ((b1 & QoiCodec.Mask2) == QoiCodec.Run) 
+                else if ((b1 & QoiCodec.Mask2) == QoiCodec.Run)
                 {
                     run = b1 & 0x3F;
                 }
-                
+
                 int indexPos2 = QoiCodec.CalculateHashTableIndex(r, g, b, a);
                 index[indexPos2] = r;
                 index[indexPos2 + 1] = g;
@@ -128,11 +128,11 @@ public static class QoiDecoder
                 pixels[pxPos + 3] = a;
             }
         }
-        
+
         int pixelsEnd = data.Length - QoiCodec.Padding.Length;
-        for (int padIdx = 0; padIdx < QoiCodec.Padding.Length; padIdx++) 
+        for (int padIdx = 0; padIdx < QoiCodec.Padding.Length; padIdx++)
         {
-            if (data[pixelsEnd + padIdx] != QoiCodec.Padding[padIdx]) 
+            if (data[pixelsEnd + padIdx] != QoiCodec.Padding[padIdx])
             {
                 throw new InvalidOperationException("Invalid padding");
             }

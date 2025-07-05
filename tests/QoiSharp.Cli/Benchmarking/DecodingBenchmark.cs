@@ -1,21 +1,12 @@
 ﻿using BenchmarkDotNet.Attributes;
 using QoiSharp.Cli.Benchmarking.Configs;
 using QoiSharp.Codec;
-using StbImageSharp;
 
 namespace QoiSharp.Cli.Benchmarking;
 
 [Config(typeof(ShortRunConfig))]
 public class DecodingBenchmark
 {
-    [Benchmark(Description = "PNG Decoding")]
-    public void PngDecoding()
-    {
-        // byte[] data = ImageResult.FromMemory(_pngData, ColorComponents.RedGreenBlueAlpha).Data;
-
-        byte[] data = QoiEncoder.Encode(new QoiImage(_pngData, 8, 4, Channels.Rgb));
-    }
-
     [Benchmark(Description = "QOI Decoding")]
     public void QoiDecoding()
     {
