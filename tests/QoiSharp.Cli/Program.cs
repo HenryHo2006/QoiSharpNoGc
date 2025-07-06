@@ -1,8 +1,5 @@
-using Microsoft.Extensions.DependencyInjection;
-using QoiSharp.Cli.Commands;
-using QoiSharp.Cli.Commands.Benchmarks;
-using QoiSharp.Cli.Infrastructure;
-using Spectre.Console.Cli;
+using BenchmarkDotNet.Running;
+using QoiSharp.Cli.Benchmarking;
 
 namespace QoiSharp.Cli
 {
@@ -10,17 +7,14 @@ namespace QoiSharp.Cli
     {
         public static int Main(string[] args)
         {
-            var registrations = new ServiceCollection();
-            var registrar = new TypeRegistrar(registrations);
-            
-            var app = new CommandApp(registrar);
-            app.Configure(config =>
+            if (args.FirstOrDefault() != "encode-to-qoi")
             {
-                config.AddCommand<DecodingBenchmarkCommand>("benchmark-decoding");
-                config.AddCommand<EncodeImageToQoiCommand>("encode-to-qoi");
-            });
-            
-            return app.Run(args);
+                _ = BenchmarkRunner.Run<DecodingBenchmark>();
+            }if (args.FirstOrDefault() != "benchmark-decoding")
+            {
+            _ = BenchmarkRunner.Run<EncodingBenchmark>();
+            }
+            return 0;
         }
     }
 }

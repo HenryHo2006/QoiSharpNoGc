@@ -108,7 +108,7 @@ public class QoiTestsFasterCompare
     }
 
     [Fact]
-    public async Task RgbEncodingShouldWork()
+    public void RgbEncodingShouldWork()
     {
         var qoiImage = new QoiImage(_pngData, 8, 4, Channels.Rgb);
 

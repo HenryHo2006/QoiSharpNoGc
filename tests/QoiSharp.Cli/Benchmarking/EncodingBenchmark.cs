@@ -5,73 +5,52 @@ using QoiSharp.Codec;
 namespace QoiSharp.Cli.Benchmarking;
 /*
 
-|                  Method | dataType |      Mean |     Error |   StdDev |   Gen 0 |   Gen 1 | Allocated |
-|------------------------ |--------- |----------:|----------:|---------:|--------:|--------:|----------:|
-|    'Nice encoding code' |    Index |  93.67 us | 24.932 us | 1.367 us | 12.0850 | 11.9629 |    101 KB |
-| 'Fasterx encoding code' |    Index |  61.91 us | 14.015 us | 0.768 us | 12.1460 | 12.0850 |    101 KB |
-| 'Fastest encoding code' |    Index |  51.68 us | 25.045 us | 1.373 us |  9.7656 |       - |     81 KB |
-|    'Nice encoding code' |     Luma |  91.10 us | 10.170 us | 0.557 us | 12.0850 | 11.9629 |    101 KB |
-| 'Fasterx encoding code' |     Luma |  60.24 us |  6.881 us | 0.377 us | 12.1460 | 12.0850 |    101 KB |
-| 'Fastest encoding code' |     Luma |  49.78 us |  6.367 us | 0.349 us |  9.7656 |       - |     81 KB |
-|    'Nice encoding code' |      Rgb | 174.84 us | 20.321 us | 1.114 us | 19.5313 | 19.2871 |    161 KB |
-| 'Fasterx encoding code' |      Rgb | 164.95 us | 33.829 us | 1.854 us | 19.5313 | 19.2871 |    161 KB |
-| 'Fastest encoding code' |      Rgb | 135.15 us |  6.960 us | 0.381 us |  9.7656 |       - |     81 KB |
-|    'Nice encoding code' |     Rgba | 169.84 us | 27.759 us | 1.522 us | 19.5313 | 19.2871 |    161 KB |
-| 'Fasterx encoding code' |     Rgba | 165.65 us | 10.341 us | 0.567 us | 19.5313 | 19.2871 |    161 KB |
-| 'Fastest encoding code' |     Rgba | 137.20 us | 26.217 us | 1.437 us |  9.7656 |       - |     81 KB |
-|    'Nice encoding code' |      Run |  55.66 us | 40.020 us | 2.194 us |  9.7656 |  0.1831 |     81 KB |
-| 'Fasterx encoding code' |      Run |  27.20 us | 23.868 us | 1.308 us |  9.7656 |  0.1831 |     81 KB |
-| 'Fastest encoding code' |      Run |  24.39 us | 25.445 us | 1.395 us |  9.7961 |       - |     81 KB |
+108*190
+|                   Method |           dataType |      Mean |     Error |   StdDev |   Gen 0 |   Gen 1 |   Gen 2 | Allocated |
+|------------------------- |------------------- |----------:|----------:|---------:|--------:|--------:|--------:|----------:|
+|  'Fastest encoding code' |              Index |  49.88 us | 50.198 us | 2.752 us | 12.1460 | 12.0850 |       - |    101 KB |
+| 'Streamed encoding code' |              Index |  57.20 us | 34.830 us | 1.909 us | 12.6343 | 12.5732 |       - |    103 KB |
+|  'Fastest encoding code' |               Luma |  51.62 us | 34.982 us | 1.917 us | 12.1460 | 12.0850 |       - |    101 KB |
+| 'Streamed encoding code' |               Luma |  56.07 us | 10.532 us | 0.577 us | 12.6343 | 12.5732 |       - |    103 KB |
+|  'Fastest encoding code' | RgbaAlphaRandomRun | 160.66 us | 72.174 us | 3.956 us | 32.2266 | 32.2266 | 32.2266 |    181 KB |
+| 'Streamed encoding code' | RgbaAlphaRandomRun | 142.69 us | 55.468 us | 3.040 us | 44.4336 | 31.2500 | 29.2969 |    219 KB |
+|  'Fastest encoding code' |          RgbaIndex |  75.26 us | 12.081 us | 0.662 us | 32.2266 | 32.2266 | 32.2266 |    121 KB |
+| 'Streamed encoding code' |          RgbaIndex |  66.15 us | 37.029 us | 2.030 us | 11.4746 | 11.3525 |       - |     95 KB |
+|  'Fastest encoding code' |           RgbaLuma |  75.12 us |  3.884 us | 0.213 us | 32.2266 | 32.2266 | 32.2266 |    121 KB |
+| 'Streamed encoding code' |           RgbaLuma |  62.68 us | 26.188 us | 1.435 us | 11.4746 | 11.3525 |       - |     95 KB |
+|  'Fastest encoding code' |            RgbaRun |  33.96 us |  0.513 us | 0.028 us | 32.2266 | 32.2266 | 32.2266 |    101 KB |
+| 'Streamed encoding code' |            RgbaRun |  29.67 us | 28.985 us | 1.589 us |  6.5918 |  1.0071 |       - |     54 KB |
+|  'Fastest encoding code' |                Run |  20.17 us |  2.218 us | 0.122 us |  9.7961 |  0.0916 |       - |     81 KB |
+| 'Streamed encoding code' |                Run |  24.18 us | 17.496 us | 0.959 us |  6.4087 |  0.0916 |       - |     52 KB |
 
 
-|                   Method | dataType |         Mean |        Error |      StdDev |   Gen 0 |   Gen 1 |   Gen 2 | Allocated |
-|------------------------- |--------- |-------------:|-------------:|------------:|--------:|--------:|--------:|----------:|
-|     'Nice encoding code' |    Index |  87,861.4 ns | 21,830.75 ns | 1,196.62 ns | 12.0850 | 11.9629 |       - |    101 KB |
-|  'Fastest encoding code' |    Index |  54,582.9 ns | 85,258.09 ns | 4,673.28 ns | 12.1460 | 12.0850 |       - |    101 KB |
-| 'Streamed encoding code' |    Index |     174.3 ns |    411.22 ns |    22.54 ns |  0.3049 |  0.0017 |       - |      2 KB |
-|     'Nice encoding code' |     Luma |  91,693.9 ns | 23,934.30 ns | 1,311.92 ns | 12.0850 | 11.9629 |       - |    101 KB |
-|  'Fastest encoding code' |     Luma |  45,483.8 ns | 21,583.04 ns | 1,183.04 ns | 12.1460 | 12.0850 |       - |    101 KB |
-| 'Streamed encoding code' |     Luma |     133.0 ns |     18.19 ns |     1.00 ns |  0.3049 |  0.0017 |       - |      2 KB |
-|     'Nice encoding code' |      Rgb | 169,000.6 ns | 33,553.36 ns | 1,839.17 ns | 19.5313 | 19.2871 |       - |    161 KB |
-|  'Fastest encoding code' |      Rgb | 149,306.4 ns |  9,731.79 ns |   533.43 ns | 19.5313 | 19.2871 |       - |    161 KB |
-| 'Streamed encoding code' |      Rgb |     146.7 ns |     66.14 ns |     3.63 ns |  0.3049 |  0.0017 |       - |      2 KB |
-|     'Nice encoding code' |     Rgba | 120,493.5 ns | 14,759.49 ns |   809.02 ns | 62.2559 | 62.2559 | 62.2559 |    201 KB |
-|  'Fastest encoding code' |     Rgba |  93,670.5 ns | 33,561.69 ns | 1,839.63 ns | 62.5000 | 62.3779 | 62.3779 |    201 KB |
-| 'Streamed encoding code' |     Rgba |     133.7 ns |     35.04 ns |     1.92 ns |  0.3107 |  0.0014 |       - |      3 KB |
-|     'Nice encoding code' |      Run |  47,966.3 ns | 40,303.04 ns | 2,209.15 ns |  9.7656 |  0.1831 |       - |     81 KB |
-|  'Fastest encoding code' |      Run |  25,590.2 ns |  2,731.75 ns |   149.74 ns |  9.7961 |  0.0916 |       - |     81 KB |
-| 'Streamed encoding code' |      Run |     157.7 ns |    497.80 ns |    27.29 ns |  0.3049 |  0.0017 |       - |      2 KB |
-
-
-|                  Method | dataType |      Mean |      Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 | Allocated |
-|------------------------ |--------- |----------:|-----------:|----------:|---------:|---------:|---------:|----------:|
-|   'Nice encdoding code' |    Index | 11.901 ms | 13.7039 ms | 0.7512 ms | 125.0000 | 125.0000 | 125.0000 |     10 MB |
-| 'Faster encdoding code' |    Index |  8.564 ms |  4.9181 ms | 0.2696 ms | 187.5000 | 187.5000 | 187.5000 |     10 MB |
-|   'Nice encdoding code' |     Luma |  7.708 ms |  2.8399 ms | 0.1557 ms | 203.1250 | 203.1250 | 203.1250 |     10 MB |
-| 'Faster encdoding code' |     Luma |  8.066 ms |  3.4160 ms | 0.1872 ms | 140.6250 | 140.6250 | 140.6250 |     10 MB |
-|   'Nice encdoding code' |      Rgb | 21.218 ms |  6.2368 ms | 0.3419 ms | 125.0000 | 125.0000 | 125.0000 |     16 MB |
-| 'Faster encdoding code' |      Rgb | 21.882 ms |  4.3142 ms | 0.2365 ms | 125.0000 | 125.0000 | 125.0000 |     16 MB |
-|   'Nice encdoding code' |      Run |  3.376 ms |  0.3133 ms | 0.0172 ms | 402.3438 | 398.4375 | 398.4375 |      8 MB |
-| 'Faster encdoding code' |      Run |  3.469 ms |  2.5499 ms | 0.1398 ms | 402.3438 | 398.4375 | 398.4375 |      8 MB |
-
-|                   Method | dataType |      Mean |     Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 | Allocated |
-|------------------------- |--------- |----------:|----------:|----------:|---------:|---------:|---------:|----------:|
-|     'Nice encoding code' |     Luma | 10.374 ms | 2.2025 ms | 0.1207 ms | 140.6250 | 140.6250 | 140.6250 |     10 MB |
-|  'Fastest encoding code' |     Luma |  5.700 ms | 5.0335 ms | 0.2759 ms | 140.6250 | 140.6250 | 140.6250 |     10 MB |
-| 'Streamed encoding code' |     Luma |  6.140 ms | 2.3868 ms | 0.1308 ms | 335.9375 | 320.3125 | 320.3125 |      4 MB |
-|     'Nice encoding code' | RgbaLuma | 10.108 ms | 4.7563 ms | 0.2607 ms | 140.6250 | 140.6250 | 140.6250 |     12 MB |
-|  'Fastest encoding code' | RgbaLuma |  6.625 ms | 2.2326 ms | 0.1224 ms | 203.1250 | 203.1250 | 203.1250 |     12 MB |
-| 'Streamed encoding code' | RgbaLuma |  6.834 ms | 0.3298 ms | 0.0181 ms | 367.1875 | 351.5625 | 351.5625 |      4 MB |
+1080*1900
+|                   Method |           dataType |      Mean |     Error |    StdDev |    Gen 0 |    Gen 1 |    Gen 2 | Allocated |
+|------------------------- |------------------- |----------:|----------:|----------:|---------:|---------:|---------:|----------:|
+|  'Fastest encoding code' |              Index |  5.309 ms | 2.5504 ms | 0.1398 ms | 257.8125 | 257.8125 | 257.8125 | 10,020 KB |
+| 'Streamed encoding code' |              Index |  6.261 ms | 5.3393 ms | 0.2927 ms | 125.0000 | 109.3750 | 109.3750 |  7,568 KB |
+|  'Fastest encoding code' |               Luma |  5.523 ms | 3.4761 ms | 0.1905 ms | 218.7500 | 218.7500 | 218.7500 | 10,020 KB |
+| 'Streamed encoding code' |               Luma |  6.145 ms | 1.9319 ms | 0.1059 ms | 125.0000 | 109.3750 | 109.3750 |  7,564 KB |
+|  'Fastest encoding code' | RgbaAlphaRandomRun | 13.856 ms | 4.9296 ms | 0.2702 ms | 125.0000 | 125.0000 | 125.0000 | 18,035 KB |
+| 'Streamed encoding code' | RgbaAlphaRandomRun | 12.143 ms | 1.8685 ms | 0.1024 ms |  78.1250 |  62.5000 |  62.5000 |  6,062 KB |
+|  'Fastest encoding code' |          RgbaIndex |  5.404 ms | 0.9224 ms | 0.0506 ms | 226.5625 | 226.5625 | 226.5625 | 12,024 KB |
+| 'Streamed encoding code' |          RgbaIndex |  6.304 ms | 2.8036 ms | 0.1537 ms |  93.7500 |  78.1250 |  78.1250 |  6,068 KB |
+|  'Fastest encoding code' |           RgbaLuma |  5.630 ms | 3.2608 ms | 0.1787 ms | 179.6875 | 179.6875 | 179.6875 | 12,024 KB |
+| 'Streamed encoding code' |           RgbaLuma |  6.273 ms | 3.6353 ms | 0.1993 ms |  93.7500 |  78.1250 |  78.1250 |  6,064 KB |
+|  'Fastest encoding code' |            RgbaRun |  1.865 ms | 0.3722 ms | 0.0204 ms | 402.3438 | 400.3906 | 398.4375 | 10,052 KB |
+| 'Streamed encoding code' |            RgbaRun |  2.437 ms | 0.2917 ms | 0.0160 ms |  19.5313 |  15.6250 |        - |    181 KB |
+|  'Fastest encoding code' |                Run |  2.589 ms | 1.3562 ms | 0.0743 ms | 402.3438 | 398.4375 | 398.4375 |  8,050 KB |
+| 'Streamed encoding code' |                Run |  2.090 ms | 0.2832 ms | 0.0155 ms |  19.5313 |  15.6250 |        - |    180 KB |
 
 */
 [Config(typeof(ShortRunConfig))]
 public class EncodingBenchmark
 {
     // [Params(nameof(QoiCodec.Run), nameof(QoiCodec.Rgb), nameof(QoiCodec.Index), nameof(QoiCodec.Luma), "RgbaIndex"))]
-    // [Params(nameof(QoiCodec.Run), "RgbaRun", "RgbaAlphaRandomRun", nameof(QoiCodec.Index), "RgbaIndex", nameof(QoiCodec.Luma), "RgbaLuma")]
+    [Params(nameof(QoiCodec.Run), "RgbaRun", "RgbaAlphaRandomRun", nameof(QoiCodec.Index), "RgbaIndex", nameof(QoiCodec.Luma), "RgbaLuma")]
     // [Params(nameof(QoiCodec.Run))]
     // [Params(nameof(QoiCodec.Rgba))]
-    [Params(nameof(QoiCodec.Luma),"RgbaLuma")]
+    // [Params(nameof(QoiCodec.Luma),"RgbaLuma")]
     public string dataType = "";
 
     [GlobalSetup]
@@ -132,7 +111,6 @@ public class EncodingBenchmark
         }
         Image = new QoiImage(data, width, height, channel);
         ImageDataStream = new MemoryStream(data);
-        compressedSize = QoiEncoder.Encode(Image).Length;
     }
     [RunOncePerIteration]
     public void TestSettup()
@@ -142,18 +120,17 @@ public class EncodingBenchmark
 
     public QoiImage Image = new QoiImage([], 0, 0, Channels.Rgb);
     public MemoryStream ImageDataStream = new MemoryStream();
-    private int compressedSize = 0;
-    [Benchmark(Description = "Nice encoding code")]
-    public byte[] NiceEncoding()
-    {
-        return QoiEncoder.Encode(Image);
-    }
+    // [Benchmark(Description = "Nice encoding code")]
+    // public byte[] NiceEncoding()
+    // {
+    //     return QoiEncoder.Encode(Image);
+    // }
 
-    [Benchmark(Description = "Fasterx encoding code")]
-    public byte[] FasterEncoding()
-    {
-        return QoiEncoderFaster.Encode(Image);
-    }
+    // [Benchmark(Description = "Fasterx encoding code")]
+    // public byte[] FasterEncoding()
+    // {
+    //     return QoiEncoderFaster.Encode(Image);
+    // }
 
     [Benchmark(Description = "Fastest encoding code")]
     public byte[] FastestEncoding()

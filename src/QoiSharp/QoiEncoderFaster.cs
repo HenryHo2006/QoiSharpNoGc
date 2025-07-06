@@ -94,7 +94,7 @@ public static class QoiEncoderFaster
                     run = 0;
                 }
 
-                int indexPos = QoiCodec.CalculateHashTableIndex(i);
+                int indexPos = QoiCodec.CalculateHashTableRgbaIndex(i);
 
                 if (i == intIndex[indexPos])
                 {

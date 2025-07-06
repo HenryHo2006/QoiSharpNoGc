@@ -40,7 +40,7 @@ public static class QoiCodec
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int CalculateHashTableIndex(int packedPixel)
+    public static int CalculateHashTableRgbaIndex(int packedPixel)
     {
         // Extract components and calculate hash in one expression
         // This avoids parameter passing overhead
