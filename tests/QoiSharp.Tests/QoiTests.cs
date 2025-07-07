@@ -19,7 +19,7 @@ public class QoiTests
 
         var qoiImage = new QoiImage(imageBytes, 3, 2, Channels.Rgb);
 
-        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        byte[] qoiData = QoiEncoderReference.Encode(qoiImage);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 1 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(128 + 64 + 4, qoiData[14 + 4]); //Check run byte
 
@@ -41,7 +41,7 @@ public class QoiTests
 
         var qoiImage = new QoiImage(imageBytes, 3, 2, Channels.Rgb);
 
-        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        byte[] qoiData = QoiEncoderReference.Encode(qoiImage);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 5 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(127, qoiData[14 + 4]); //Check diff byte
         Assert.Equal(qoiData[14 + 4], qoiData[14 + 4 + 1]);
@@ -66,7 +66,7 @@ public class QoiTests
 
         var qoiImage = new QoiImage(imageBytes, 2, 2, Channels.Rgb);
 
-        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        byte[] qoiData = QoiEncoderReference.Encode(qoiImage);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 6 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(128 + 32 + 8 + 2, qoiData[14 + 4]); //Check luma byte1
         Assert.Equal(128 + 8, qoiData[14 + 5]); //Check luma byte2
@@ -90,7 +90,7 @@ public class QoiTests
 
         var qoiImage = new QoiImage(imageBytes, 3, 2, Channels.Rgb);
 
-        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        byte[] qoiData = QoiEncoderReference.Encode(qoiImage);
         Assert.Equal(QoiCodec.HeaderSize + 8 + 4 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(8 + 2, qoiData[14 + 8]); //Check index byte
 
@@ -108,7 +108,7 @@ public class QoiTests
     {
         var qoiImage = new QoiImage(_pngData, 8, 4, Channels.Rgb);
 
-        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        byte[] qoiData = QoiEncoderReference.Encode(qoiImage);
 
         // Assert
         var img = QoiDecoder.Decode(qoiData);

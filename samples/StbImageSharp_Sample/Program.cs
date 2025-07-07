@@ -10,7 +10,7 @@ public static class Program
 
         var img = ImageResult.FromMemory(await File.ReadAllBytesAsync(imagePath), ColorComponents.RedGreenBlueAlpha);
         var qoiImage = new QoiImage(img.Data, img.Width, img.Height, (Channels)img.Comp);
-        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        byte[] qoiData = QoiEncoderReference.Encode(qoiImage);
         
         // saving image
         await File.WriteAllBytesAsync("MyImage.qoi", qoiData);

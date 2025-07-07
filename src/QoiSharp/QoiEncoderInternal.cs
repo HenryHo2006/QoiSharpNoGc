@@ -14,7 +14,7 @@ internal static class QoiEncoderInternal
     internal static (int previousPixel, int run, int bytesPos) RunRgbaCompression
         (byte[] pixelsToCompress, byte[] outputBytes, int bytesPos, int pixelsLength, int run, int previousPixel, int[] pixelHashTable)
     {
-        int currentPixel = 0;
+        int currentPixel;
         for (int pxPos = 0; pxPos < pixelsLength; pxPos += 4)
         {
             currentPixel = BinaryPrimitives.ReadInt32BigEndian(pixelsToCompress.AsSpan(pxPos, 4));
@@ -92,7 +92,7 @@ internal static class QoiEncoderInternal
     internal static (int previousPixel, int run, int bytesPos) RunRgbCompression
         (byte[] pixelsToCompress, byte[] outputBytes, int bytesPos, int pixelsLength, int run, int previousPixel, int[] pixelHashTable)
     {
-        int currentPixel = 0;
+        int currentPixel;
         for (int pxPos = 0; pxPos < pixelsLength; pxPos += 3)
         {
             currentPixel = pixelsToCompress[pxPos] << 16 | pixelsToCompress[pxPos + 1] << 8 | pixelsToCompress[pxPos + 2];
@@ -144,10 +144,8 @@ internal static class QoiEncoderInternal
                         }
                         else
                         {
-                            outputBytes[bytesPos++] = QoiCodec.Rgb;
-                            outputBytes[bytesPos++] = (byte)(currentPixel >> 16);
-                            outputBytes[bytesPos++] = (byte)(currentPixel >> 8);
-                            outputBytes[bytesPos++] = (byte)currentPixel;
+                            BinaryPrimitives.WriteInt32BigEndian(outputBytes.AsSpan(bytesPos, 4), currentPixel | (QoiCodec.Rgb << 24));
+                            bytesPos += 4;
                         }
                     }
                 }
@@ -160,25 +158,26 @@ internal static class QoiEncoderInternal
     /// <summary>
     /// Writes the QOI header to the output byte array.
     /// </summary>
-    internal static void WriteHeader(byte[] outputBytes, int width, int height, Channels channels, ColorSpace colorSpace)
+    internal static void WriteHeader(byte[] outputBytes, QoiImage image)
     {
         outputBytes[0] = (byte)(QoiCodec.Magic >> 24);
         outputBytes[1] = (byte)(QoiCodec.Magic >> 16);
         outputBytes[2] = (byte)(QoiCodec.Magic >> 8);
         outputBytes[3] = (byte)QoiCodec.Magic;
 
+        var width = image.Width;
         outputBytes[4] = (byte)(width >> 24);
         outputBytes[5] = (byte)(width >> 16);
         outputBytes[6] = (byte)(width >> 8);
         outputBytes[7] = (byte)width;
 
+        var height = image.Height;
         outputBytes[8] = (byte)(height >> 24);
         outputBytes[9] = (byte)(height >> 16);
         outputBytes[10] = (byte)(height >> 8);
         outputBytes[11] = (byte)height;
 
-        outputBytes[12] = (byte)channels;
-        outputBytes[13] = (byte)colorSpace;
+        outputBytes[12] = (byte)image.Channels;
+        outputBytes[13] = (byte)image.ColorSpace;
     }
-
 }

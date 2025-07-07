@@ -1,10 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
-using QoiSharp.Cli.Benchmarking.Configs;
-using QoiSharp.Codec;
 
 namespace QoiSharp.Cli.Benchmarking;
 
-[Config(typeof(ShortRunConfig))]
 public class DecodingBenchmark
 {
     [Benchmark(Description = "QOI Decoding")]

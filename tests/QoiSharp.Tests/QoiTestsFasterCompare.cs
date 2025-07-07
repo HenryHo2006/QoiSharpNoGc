@@ -19,10 +19,10 @@ public class QoiTestsFasterCompare
 
         var qoiImage = new QoiImage(imageBytes, 3, 2, Channels.Rgb);
 
-        byte[] qoiData = QoiEncoderFaster.Encode(qoiImage);
+        byte[] qoiData = QoiEncoder.Encode(qoiImage);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 1 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(128 + 64 + 4, qoiData[14 + 4]); //Check run byte
-        Assert.Equal(QoiEncoder.Encode(qoiImage), qoiData);
+        Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
 
         var img = QoiDecoder.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
@@ -42,12 +42,12 @@ public class QoiTestsFasterCompare
 
         var qoiImage = new QoiImage(imageBytes, 3, 2, Channels.Rgb);
 
-        byte[] qoiData = QoiEncoderFaster.Encode(qoiImage);
+        byte[] qoiData = QoiEncoder.Encode(qoiImage);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 5 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(127, qoiData[14 + 4]); //Check diff byte
         Assert.Equal(qoiData[14 + 4], qoiData[14 + 4 + 1]);
         Assert.Equal(64 + 16 + 4 + 1, qoiData[14 + 4 + 4]);
-        Assert.Equal(QoiEncoder.Encode(qoiImage), qoiData);
+        Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
 
         var img = QoiDecoder.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
@@ -68,11 +68,11 @@ public class QoiTestsFasterCompare
 
         var qoiImage = new QoiImage(imageBytes, 2, 2, Channels.Rgb);
 
-        byte[] qoiData = QoiEncoderFaster.Encode(qoiImage);
+        byte[] qoiData = QoiEncoder.Encode(qoiImage);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 6 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(128 + 32 + 8 + 2, qoiData[14 + 4]); //Check luma byte1
         Assert.Equal(128 + 8, qoiData[14 + 5]); //Check luma byte2
-        Assert.Equal(QoiEncoder.Encode(qoiImage), qoiData);
+        Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
 
         var img = QoiDecoder.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
@@ -93,10 +93,10 @@ public class QoiTestsFasterCompare
 
         var qoiImage = new QoiImage(imageBytes, 3, 2, Channels.Rgb);
 
-        byte[] qoiData = QoiEncoderFaster.Encode(qoiImage);
+        byte[] qoiData = QoiEncoder.Encode(qoiImage);
         Assert.Equal(QoiCodec.HeaderSize + 8 + 4 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(8 + 2, qoiData[14 + 8]); //Check index byte
-        Assert.Equal(QoiEncoder.Encode(qoiImage), qoiData);
+        Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
 
         var img = QoiDecoder.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
@@ -110,14 +110,14 @@ public class QoiTestsFasterCompare
     [Fact]
     public void RgbEncodingShouldWork()
     {
-        var qoiImage = new QoiImage(_pngData, 8, 4, Channels.Rgb);
+        var qoiImage = new QoiImage(_pixelData, 8, 4, Channels.Rgb);
 
-        byte[] qoiData = QoiEncoderFaster.Encode(qoiImage);
-        Assert.Equal(QoiEncoder.Encode(qoiImage), qoiData);
+        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
 
         // Assert
         var img = QoiDecoder.Decode(qoiData);
-        Assert.True(img.Data.SequenceEqual(_pngData));
+        Assert.True(img.Data.SequenceEqual(_pixelData));
         Assert.Equal(_qoiData, _qoiData);
         Assert.Equal(img.Width, qoiImage.Width);
         Assert.Equal(img.Height, qoiImage.Height);
@@ -125,8 +125,7 @@ public class QoiTestsFasterCompare
         Assert.Equal(img.ColorSpace, qoiImage.ColorSpace);
     }
 
-
-    private static byte[] _pngData = [
+    private static byte[] _pixelData = [
         130,   0, 212, 124, 204,  88,  79,  26, 210, 104, 117,   4,
         137, 191,  80, 204,  65, 175,  38, 160, 207, 182, 174,  59,
          83,  18, 227,   4, 234, 150,  97, 131,  62,  95, 167, 236,

@@ -23,7 +23,7 @@ public static class QoiCodec
     /// pixel, rounded down to a nice clean value. 400 million pixels ought to be 
     /// enough for anybody.
     /// </summary>
-    public static int MaxPixels = 400_000_000;
+    public static long MaxPixels = 400_000_000;
 
     public const int HashTableSize = 64;
 
