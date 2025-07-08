@@ -1,12 +1,11 @@
 using System;
 using System.Linq;
-using System.Threading.Tasks;
 using QoiSharp.Codec;
 using Xunit;
 
 namespace QoiSharp.Tests;
 
-public class QoiTestsFasterCompare
+public class QoiTestsCompare
 {
 
     [Fact]

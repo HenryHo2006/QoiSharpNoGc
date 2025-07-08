@@ -1,78 +1,167 @@
-﻿using System.Buffers.Binary;
-using System.Runtime.CompilerServices;
+﻿using System.Drawing;
 using QoiSharp.Codec;
 using QoiSharp.Exceptions;
 
 namespace QoiSharp;
 
 /// <summary>
-/// QOI encoder.
+/// QOI encoder stream.
+/// This stream reads raw pixel data and encodes it into QOI format on demand
 /// </summary>
-public static class QoiEncoderStream
+public class QoiEncoderStream : Stream
 {
-    /// <summary>
-    /// Encodes raw pixel data into QOI.
-    /// </summary>
-    /// <param name="image">QOI image.</param>
-    /// <returns>Encoded image.</returns>
-    /// <exception cref="QoiEncodingException">Thrown when image information is invalid.</exception>
-    public static Stream Encode(QoiImage image, Stream imageByteStream)
+    public QoiEncoderStream(Stream pixelStream, Size imageSize, Channels channels, ColorSpace colorSpace = ColorSpace.SRgb)
     {
-        if (image.Width < 1)
+        if (imageSize.Width < 1)
         {
-            throw new QoiEncodingException($"Invalid width: {image.Width}");
+            throw new QoiEncodingException($"Invalid width: {imageSize.Width}");
         }
-        if (image.Height < 1)
+        if (imageSize.Height < 1)
         {
-            throw new QoiEncodingException($"Invalid height: {image.Height}.");
+            throw new QoiEncodingException($"Invalid height: {imageSize.Height}.");
+        }
+        PixelStream = pixelStream;
+        ImageSize = imageSize;
+        Channels = channels;
+        var readArraySize = bufferSize / 4 * 3;
+        if (channels == Channels.RgbWithAlpha)
+        {
+            readArraySize = bufferSize / 5 * 4;
+            previousPixel = 255;
         }
 
-        byte channels = (byte)image.Channels;
-        var bufferSize = 30000; //This number needs to be dividable by 12
-        var readArraySize = channels == 4 ? (bufferSize / 5 * 4) : (bufferSize / 4 * 3);
-        byte[] pixels = new byte[readArraySize];
+        pixelInputBuffer = new byte[readArraySize];
+        //Write the header, ready to be read
+        QoiEncoderInternal.WriteHeader(outputBytesBuffer, imageSize.Width, imageSize.Height, channels, colorSpace);
+        outputPixelLength = QoiCodec.HeaderSize;
+    }
 
-        var outputStream = new MemoryStream();
-        var header = new byte[QoiCodec.HeaderSize];
-        QoiEncoderInternal.WriteHeader(header, image);
-        outputStream.Write(header, 0, QoiCodec.HeaderSize);
+    public override bool CanRead => true;
+    public override bool CanSeek => false;
+    public override bool CanWrite => false;
+    public override long Length => throw new NotSupportedException();
+    public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
 
-        byte[] outputBytesBuffer = new byte[bufferSize];
+    /// <summary>
+    /// Size of the internal buffer used internaly
+    /// This number needs to be dividable by 60 (dividable by 3, 4 and 5)
+    /// </summary>
+    private const int bufferSize = 3000;
+    private Size ImageSize;
+    private Stream PixelStream;
+    private Channels Channels;
+
+    //Work variables:
+    private int previousPixel = 0;
+    private int equalPixelRun = 0;
+    private int readPixels = 0;
+    private byte[] pixelInputBuffer;
+    private byte[] outputBytesBuffer = new byte[bufferSize];
+    private int outputPixelStartPos = 0;
+    private int outputPixelLength = 0;
+    int[] pixelHashTable = new int[QoiCodec.HashTableSize];
+    private bool endOfStreamWritteToBuffer = false;
+
+    public override int Read(byte[] buffer, int offset, int count)
+    {
         int read;
-        int run = 0;
-        int bytesWritten;
-        int prevI = channels == 4 ? 255 : 0;
-        long readPixels = 0;
-        int[] intIndex = new int[QoiCodec.HashTableSize];
+        int bytesWrittenTotal = 0;
+        int remainingBytesToWriteBack = count - offset;
+        if (outputPixelLength > 0)
+        {
+            bytesWrittenTotal = CopyBytesToOutputBuffer(buffer, offset, bytesWrittenTotal, remainingBytesToWriteBack);
+            if (bytesWrittenTotal == remainingBytesToWriteBack)
+            {
+                return bytesWrittenTotal;
+            }
+            remainingBytesToWriteBack = count - offset - bytesWrittenTotal;
+
+        }
+        if (endOfStreamWritteToBuffer)
+        {
+            return bytesWrittenTotal; // If the end of stream was already written to the buffer, return immediately
+        }
         do
         {
             //Read from the image byte stream into the pixel buffer
-            read = imageByteStream.Read(pixels, 0, pixels.Length);
+            read = PixelStream.Read(pixelInputBuffer, 0, pixelInputBuffer.Length);
             if (read == 0)
             {
                 break; // End of stream
             }
             readPixels += read;
-            (prevI, run, bytesWritten) = channels == 4
-               ? QoiEncoderInternal.RunRgbaCompression(pixels, outputBytesBuffer, 0, read, run, prevI, intIndex)
-               : QoiEncoderInternal.RunRgbCompression(pixels, outputBytesBuffer, 0, read, run, prevI, intIndex);
+            (previousPixel, equalPixelRun, outputPixelLength) = Channels == Channels.RgbWithAlpha
+               ? QoiEncoderInternal.RunRgbaCompression(pixelInputBuffer, outputBytesBuffer, 0, read, equalPixelRun, previousPixel, pixelHashTable)
+               : QoiEncoderInternal.RunRgbCompression(pixelInputBuffer, outputBytesBuffer, 0, read, equalPixelRun, previousPixel, pixelHashTable);
             //Write the output bytes from the encoded block to the stream
-            outputStream.Write(outputBytesBuffer, 0, bytesWritten);
+            bytesWrittenTotal = CopyBytesToOutputBuffer(buffer, offset, bytesWrittenTotal, remainingBytesToWriteBack);
+            if (bytesWrittenTotal == remainingBytesToWriteBack)
+            {
+                return bytesWrittenTotal;
+            }
+            remainingBytesToWriteBack = count - offset - bytesWrittenTotal;
         }
-        while (read == readArraySize);
-
-        long expectedPixelLength = (long)image.Width * image.Height * channels;
+        while (true);
+        long expectedPixelLength = (long)ImageSize.Width * ImageSize.Height * (int)Channels;
         if (readPixels != expectedPixelLength)
         {
             throw new QoiEncodingException($"Invalid pixel data length: {readPixels}. Expected: {expectedPixelLength}");
         }
         //If the last block was a run, write it out
-        if (run > 0)
+        if (equalPixelRun > 0)
         {
-            outputStream.WriteByte((byte)(QoiCodec.Run | (run - 1)));
+            outputBytesBuffer[0] = (byte)(QoiCodec.Run | (equalPixelRun - 1));
+            outputPixelLength = 1;
+            equalPixelRun = 0;
+            bytesWrittenTotal = CopyBytesToOutputBuffer(buffer, offset, bytesWrittenTotal, remainingBytesToWriteBack);
+            if (bytesWrittenTotal == remainingBytesToWriteBack)
+            {
+                return bytesWrittenTotal;
+            }
+            remainingBytesToWriteBack = count - offset - bytesWrittenTotal;
         }
-        //Write the padding bytes and return the stream
-        outputStream.Write(QoiCodec.Padding, 0, QoiCodec.Padding.Length);
-        return outputStream;
+
+        QoiCodec.Padding.AsMemory().CopyTo(outputBytesBuffer.AsMemory(0, QoiCodec.Padding.Length));
+        outputPixelLength = QoiCodec.Padding.Length;
+        endOfStreamWritteToBuffer = true;
+
+        bytesWrittenTotal = CopyBytesToOutputBuffer(buffer, offset, bytesWrittenTotal, remainingBytesToWriteBack);
+        return bytesWrittenTotal;
+    }
+
+    private int CopyBytesToOutputBuffer(byte[] buffer, int bufferOffset, int bytesWrittenTotal, int remainingBytesToWriteBack)
+    {
+        var bytesToWriteOut = Math.Min(remainingBytesToWriteBack, outputPixelLength - outputPixelStartPos);
+        outputBytesBuffer.AsMemory(outputPixelStartPos, bytesToWriteOut).CopyTo(buffer.AsMemory(bufferOffset + bytesWrittenTotal, bytesToWriteOut));
+        outputPixelStartPos = bytesToWriteOut == outputPixelLength - outputPixelStartPos
+            ? 0
+            //we have some more bytes to write out, so cache them for the next read
+            : bytesToWriteOut + outputPixelStartPos;
+        bytesWrittenTotal += bytesToWriteOut;
+        if (outputPixelStartPos == 0)
+        {
+            outputPixelLength = 0; // Reset if the end of the output buffer was reached
+        }
+        return bytesWrittenTotal;
+    }
+
+    public override void Flush()
+    {
+        //Does nothing, since this is a read based stream
+    }
+
+    public override long Seek(long offset, SeekOrigin origin)
+    {
+        throw new NotSupportedException();
+    }
+
+    public override void SetLength(long value)
+    {
+        throw new NotSupportedException();
+    }
+
+    public override void Write(byte[] buffer, int offset, int count)
+    {
+        throw new NotSupportedException();
     }
 }

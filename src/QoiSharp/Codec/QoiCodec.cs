@@ -39,27 +39,6 @@ public static class QoiCodec
         return ((r & 0xFF) * 3 + (g & 0xFF) * 5 + (b & 0xFF) * 7 + (a & 0xFF) * 11) % HashTableSize * 4;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int CalculateHashTableRgbaIndex(int packedPixel)
-    {
-        // Extract components and calculate hash in one expression
-        // This avoids parameter passing overhead
-        return (((packedPixel >> 24) * 3) +
-                (((packedPixel >> 16) & 0xFF) * 5) +
-                (((packedPixel >> 8) & 0xFF) * 7) +
-                ((packedPixel & 0xFF) * 11)) & 63;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int CalculateHashTableRgbIndex(int packedPixel)
-    {
-        // Extract components and calculate hash in one expression
-        // This avoids parameter passing overhead
-        return (((packedPixel >> 16) * 3) +
-                (((packedPixel >> 8) & 0xFF) * 5) +
-                ((packedPixel & 0xFF) * 7) + 2805/*result of Alpha 255 * 11*/)  & 63;
-    }
-
     public static bool IsValidMagic(byte[] magic) => CalculateMagic(magic) == Magic;
 
     private static int CalculateMagic(ReadOnlySpan<char> chars) => chars[0] << 24 | chars[1] << 16 | chars[2] << 8 | chars[3];

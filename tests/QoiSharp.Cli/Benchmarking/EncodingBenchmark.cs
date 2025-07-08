@@ -1,4 +1,5 @@
-﻿using BenchmarkDotNet.Attributes;
+﻿using System.Drawing;
+using BenchmarkDotNet.Attributes;
 using QoiSharp.Codec;
 
 namespace QoiSharp.Cli.Benchmarking;
@@ -146,6 +147,6 @@ public class EncodingBenchmark
     public Stream StreamEncoding()
     {
         ImageDataStream.Position = 0;
-        return QoiEncoderStream.Encode(Image, ImageDataStream);
+        return new QoiEncoderStream(ImageDataStream, new Size(Image.Width, Image.Height), Image.Channels);
     }
 }

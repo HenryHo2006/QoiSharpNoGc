@@ -1,4 +1,5 @@
 ﻿using System.Buffers.Binary;
+using System.Runtime.CompilerServices;
 using QoiSharp.Codec;
 
 namespace QoiSharp;
@@ -34,7 +35,7 @@ internal static class QoiEncoderInternal
                     outputBytes[bytesPos++] = (byte)(QoiCodec.Run | (run - 1));
                     run = 0;
                 }
-                int indexPos = QoiCodec.CalculateHashTableRgbaIndex(currentPixel);
+                int indexPos = CalculateHashTableRgbaIndex(currentPixel);
                 if (currentPixel == pixelHashTable[indexPos])
                 {
                     outputBytes[bytesPos++] = (byte)(QoiCodec.Index | (indexPos));
@@ -113,7 +114,7 @@ internal static class QoiEncoderInternal
                     run = 0;
                 }
 
-                int indexPos = QoiCodec.CalculateHashTableRgbIndex(currentPixel);
+                int indexPos = CalculateHashTableRgbIndex(currentPixel);
                 if (currentPixel == pixelHashTable[indexPos])
                 {
                     outputBytes[bytesPos++] = (byte)(QoiCodec.Index | (indexPos));
@@ -155,29 +156,56 @@ internal static class QoiEncoderInternal
         return (previousPixel, run, bytesPos);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int CalculateHashTableRgbaIndex(int packedPixel)
+    {
+        // Extract components and calculate hash in one expression
+        return (((packedPixel >> 24) * 3) +
+                (((packedPixel >> 16) & 0xFF) * 5) +
+                (((packedPixel >> 8) & 0xFF) * 7) +
+                ((packedPixel & 0xFF) * 11)) & 63;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int CalculateHashTableRgbIndex(int packedPixel)
+    {
+        // Extract components and calculate hash in one expression
+        return (((packedPixel >> 16) * 3) +
+                (((packedPixel >> 8) & 0xFF) * 5) +
+                ((packedPixel & 0xFF) * 7) + 2805/*result of Alpha 255 * 11*/)  & 63;
+    }
+
     /// <summary>
     /// Writes the QOI header to the output byte array.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void WriteHeader(byte[] outputBytes, QoiImage image)
+    { 
+        WriteHeader(outputBytes, image.Width, image.Height, image.Channels, image.ColorSpace);
+    }
+
+    /// <summary>
+    /// Writes the QOI header to the output byte array.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void WriteHeader(byte[] outputBytes, int width, int height, Channels channels, ColorSpace colorSpace)
     {
         outputBytes[0] = (byte)(QoiCodec.Magic >> 24);
         outputBytes[1] = (byte)(QoiCodec.Magic >> 16);
         outputBytes[2] = (byte)(QoiCodec.Magic >> 8);
         outputBytes[3] = (byte)QoiCodec.Magic;
 
-        var width = image.Width;
         outputBytes[4] = (byte)(width >> 24);
         outputBytes[5] = (byte)(width >> 16);
         outputBytes[6] = (byte)(width >> 8);
         outputBytes[7] = (byte)width;
 
-        var height = image.Height;
         outputBytes[8] = (byte)(height >> 24);
         outputBytes[9] = (byte)(height >> 16);
         outputBytes[10] = (byte)(height >> 8);
         outputBytes[11] = (byte)height;
 
-        outputBytes[12] = (byte)image.Channels;
-        outputBytes[13] = (byte)image.ColorSpace;
+        outputBytes[12] = (byte)channels;
+        outputBytes[13] = (byte)colorSpace;
     }
 }
