@@ -20,6 +20,7 @@ public class QoiEncoderStream : Stream
         {
             throw new QoiEncodingException($"Invalid height: {imageSize.Height}.");
         }
+        
         PixelStream = pixelStream;
         ImageSize = imageSize;
         Channels = channels;

@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using QoiSharp.Codec;
+using QoiSharp.Exceptions;
 using Xunit;
 
 namespace QoiSharp.Tests;
@@ -45,7 +47,7 @@ public class QoiTestsStreamCompare
         var qoiImage = new QoiImage(imageBytes, 3, 2, Channels.Rgb);
         byte[] qoiData = [.. new QoiEncoderStream(new MemoryStream(imageBytes), new Size(3, 2), Channels.Rgb)
             .ReturnByteByByte()];
-            
+
         Assert.Equal(QoiCodec.HeaderSize + 4 + 1 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(128 + 64 + 4, qoiData[14 + 4]); //Check run byte
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
@@ -171,6 +173,92 @@ public class QoiTestsStreamCompare
         Assert.Equal(img.ColorSpace, qoiImage.ColorSpace);
     }
 
+    [Fact]
+    public void RgbEncoding_Index99Length()
+    {
+        byte[] imageBytes = new byte[300];
+        for (int i = 0; i < imageBytes.Length; i += 3)
+        {
+            imageBytes[i] = 12;
+            imageBytes[i + 1] = 34;
+            imageBytes[i + 2] = 65;
+        }
+        var qoiImage = new QoiImage(imageBytes, 10, 10, Channels.Rgb);
+
+        byte[] qoiData = QoiEncoderReference.Encode(qoiImage);
+        Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
+
+        var img = QoiDecoder.Decode(qoiData);
+        Assert.True(img.Data.SequenceEqual(imageBytes));
+    }
+
+    [Theory]
+    [InlineData(1, 0)]
+    [InlineData(0, 1)]
+    [InlineData(2,2)]
+    [InlineData(int.MaxValue / 2, int.MaxValue / 2)]
+    [ExcludeFromCodeCoverage(Justification = "Error with Assert.Throws")]
+    public void RgbEncoding_Exceptions(int width, int length)
+    {
+        byte[] imageBytes = new byte[3];
+        var qoiImage = new QoiImage(imageBytes, width, length, Channels.Rgb);
+
+        Assert.Throws<QoiEncodingException>(() => QoiEncoderReference.Encode(qoiImage));
+    }
+
+    [Fact]
+    public void RgbEncoding_IndexThenDiff()
+    {
+        byte[] imageBytes = [
+            12 ,34, 65, 12 ,34, 65,
+            12 ,34, 65, 13 ,34, 65
+        ];
+        var qoiImage = new QoiImage(imageBytes, 2,2, Channels.Rgb);
+
+        byte[] qoiData = QoiEncoderReference.Encode(qoiImage);
+        Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
+        var img = QoiDecoder.Decode(qoiData);
+        Assert.True(img.Data.SequenceEqual(imageBytes));
+    }
+
+    [Fact]
+    public void RgbaEncoding_IndexThenDiff()
+    {
+        byte[] imageBytes = [
+            12 ,34, 65, 255, 12 ,34, 65, 255,
+            12 ,34, 65, 255, 13 ,34, 65, 255
+        ];
+        var qoiImage = new QoiImage(imageBytes, 2,2, Channels.RgbWithAlpha);
+
+        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
+        Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
+        var img = QoiDecoder.Decode(qoiData);
+        Assert.True(img.Data.SequenceEqual(imageBytes));
+    }
+    
+    [Fact]
+    public void RgbaEncoding_Index99Length()
+    {
+        byte[] imageBytes = new byte[400];
+        for (int i = 0; i < imageBytes.Length; i += 4)
+        {
+            imageBytes[i] = 12;
+            imageBytes[i + 1] = 34;
+            imageBytes[i + 2] = 65;
+            imageBytes[i + 3] = 255;
+        }
+        var qoiImage = new QoiImage(imageBytes, 10, 10, Channels.RgbWithAlpha);
+
+        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
+        Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
+
+        var img = QoiDecoder.Decode(qoiData);
+        Assert.True(img.Data.SequenceEqual(imageBytes));
+    }
+
+    [ExcludeFromCodeCoverage(Justification = "Only to create example data for tests")]
     private static QoiImage CreateExampleData(string dataType, int width, int height)
     {
         var data = new byte[height * width * 3];

@@ -1,6 +1,8 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using QoiSharp.Codec;
+using QoiSharp.Exceptions;
 using Xunit;
 
 namespace QoiSharp.Tests;
@@ -122,6 +124,93 @@ public class QoiTestsCompare
         Assert.Equal(img.Height, qoiImage.Height);
         Assert.Equal(img.Channels, qoiImage.Channels);
         Assert.Equal(img.ColorSpace, qoiImage.ColorSpace);
+    }
+
+    [Fact]
+    public void RgbEncoding_Index99Length()
+    {
+        byte[] imageBytes = new byte[300];
+        for (int i = 0; i < imageBytes.Length; i += 3)
+        {
+            imageBytes[i] = 12;
+            imageBytes[i + 1] = 34;
+            imageBytes[i + 2] = 65;
+        }
+        var qoiImage = new QoiImage(imageBytes, 10, 10, Channels.Rgb);
+
+        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
+        Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
+
+        var img = QoiDecoder.Decode(qoiData);
+        Assert.True(img.Data.SequenceEqual(imageBytes));
+    }
+
+    [Theory]
+    [InlineData(1, 0)]
+    [InlineData(0, 1)]
+    [InlineData(2,2)]
+    [InlineData(int.MaxValue / 2, int.MaxValue / 2)]
+    [ExcludeFromCodeCoverage(Justification = "Error with Assert.Throws")]
+    public void RgbEncoding_Exceptions(int width, int length)
+    {
+        byte[] imageBytes = new byte[3];
+        var qoiImage = new QoiImage(imageBytes, width, length, Channels.Rgb);
+
+        Assert.Throws<QoiEncodingException>(() => QoiEncoder.Encode(qoiImage));
+    }
+
+    [Fact]
+    public void RgbEncoding_IndexThenDiff()
+    {
+        byte[] imageBytes = [
+            12 ,34, 65, 12 ,34, 65,
+            12 ,34, 65, 13 ,34, 65
+        ];
+        var qoiImage = new QoiImage(imageBytes, 2,2, Channels.Rgb);
+
+        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
+        Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
+        var img = QoiDecoder.Decode(qoiData);
+        Assert.True(img.Data.SequenceEqual(imageBytes));
+    }
+
+    [Fact]
+    public void RgbaEncoding_IndexThenDiff()
+    {
+        byte[] imageBytes = [
+            12 ,34, 65, 255, 12 ,34, 65, 255,
+            12 ,34, 65, 255, 13 ,34, 65, 255
+        ];
+        var qoiImage = new QoiImage(imageBytes, 2,2, Channels.RgbWithAlpha);
+
+        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
+        Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
+        var img = QoiDecoder.Decode(qoiData);
+        Assert.True(img.Data.SequenceEqual(imageBytes));
+    }
+
+    [Fact]
+    public void RgbaEncoding_Index99Length()
+    {
+        byte[] imageBytes = new byte[400];
+        for (int i = 0; i < imageBytes.Length; i += 4)
+        {
+            imageBytes[i] = 12;
+            imageBytes[i + 1] = 34;
+            imageBytes[i + 2] = 65;
+            imageBytes[i + 3] = 255;
+        }
+        var qoiImage = new QoiImage(imageBytes, 10, 10, Channels.RgbWithAlpha);
+
+        byte[] qoiData = QoiEncoder.Encode(qoiImage);
+        Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
+        Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
+
+        var img = QoiDecoder.Decode(qoiData);
+        Assert.True(img.Data.SequenceEqual(imageBytes));
     }
 
     private static byte[] _pixelData = [

@@ -32,6 +32,11 @@ public static class QoiEncoderReference
         byte colorSpace = (byte)image.ColorSpace;
         byte[] pixels = image.Data;
 
+        if (pixels.Length != width * height * channels)
+        {
+            throw new QoiEncodingException($"Invalid pixel data length: {pixels.Length}. Expected: {width * height * channels}");
+        }
+
         byte[] bytes = new byte[QoiCodec.HeaderSize + QoiCodec.Padding.Length + (width * height * (channels + 1))];
 
         bytes[0] = (byte)(QoiCodec.Magic >> 24);

@@ -2,6 +2,7 @@
 
 namespace QoiSharp.Cli.Benchmarking;
 
+[Config(typeof(CustomBenchmarkConfig))]
 public class DecodingBenchmark
 {
     [Benchmark(Description = "QOI Decoding")]
