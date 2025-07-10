@@ -8,9 +8,9 @@ using QoiSharp.Codec;
 using QoiSharp.Exceptions;
 using Xunit;
 
-namespace QoiSharp.Tests;
+namespace QoiSharp.Encoding.Tests;
 
-public class QoiTestsStreamCompare
+public class QoiStreamEncoderTests
 {
 
     [Fact]

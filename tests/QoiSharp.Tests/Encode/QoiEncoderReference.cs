@@ -1,7 +1,7 @@
 ﻿using QoiSharp.Codec;
 using QoiSharp.Exceptions;
 
-namespace QoiSharp;
+namespace QoiSharp.Encoding.Tests;
 
 /// <summary>
 /// QOI encoder.

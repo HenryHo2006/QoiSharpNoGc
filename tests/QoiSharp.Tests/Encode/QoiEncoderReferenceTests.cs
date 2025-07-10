@@ -1,14 +1,13 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Threading.Tasks;
 using QoiSharp.Codec;
 using QoiSharp.Exceptions;
 using Xunit;
 
-namespace QoiSharp.Tests;
+namespace QoiSharp.Encoding.Tests;
 
-public class QoiTests
+public class QoiEncoderReferenceTests
 {
 
     [Fact]
