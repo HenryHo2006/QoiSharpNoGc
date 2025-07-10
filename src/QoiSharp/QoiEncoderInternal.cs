@@ -45,25 +45,26 @@ internal static class QoiEncoderInternal
                     pixelHashTable[indexPos] = currentPixel;
                     if ((currentPixel & 0xFF) == (previousPixel & 0xFF))
                     {
-                        int vr = (currentPixel >> 24) - (previousPixel >> 24);
-                        int vg = ((currentPixel >> 16) & 0xFF) - ((previousPixel >> 16) & 0xFF);
-                        int vb = ((currentPixel >> 8) & 0xFF) - ((previousPixel >> 8) & 0xFF);
-                        if (vr is > -3 and < 2 &&
-                            vg is > -3 and < 2 &&
-                            vb is > -3 and < 2)
+                        int vr = (currentPixel >> 24) - (previousPixel >> 24) + 2;
+                        int vg = ((currentPixel >> 16) & 0xFF) - ((previousPixel >> 16) & 0xFF) + 2;
+                        int vb = ((currentPixel >> 8) & 0xFF) - ((previousPixel >> 8) & 0xFF) + 2;
+                        if ((uint)vr < 4 &&
+                            (uint)vg < 4 &&
+                            (uint)vb < 4)
                         {
-                            outputBytes[bytesPos++] = (byte)(QoiCodec.Diff | (vr + 2) << 4 | (vg + 2) << 2 | (vb + 2));
+                            outputBytes[bytesPos++] = (byte)(QoiCodec.Diff | vr << 4 | vg << 2 | vb);
                         }
                         else
                         {
-                            int vgr = vr - vg;
-                            int vgb = vb - vg;
-                            if (vgr is > -9 and < 8 &&
-                                 vg is > -33 and < 32 &&
-                                 vgb is > -9 and < 8)
+                            int vgr = vr - vg + 8;
+                            int vgb = vb - vg + 8;
+                            vg += 30; // -2 from the previous calculation and +32 to fit into the range of -32 to 31
+                            if ((uint)vgr < 16 &&
+                                 (uint)vgb < 16 &&
+                                 (uint)vg < 64)
                             {
-                                outputBytes[bytesPos++] = (byte)(QoiCodec.Luma | (vg + 32));
-                                outputBytes[bytesPos++] = (byte)((vgr + 8) << 4 | (vgb + 8));
+                                outputBytes[bytesPos++] = (byte)(QoiCodec.Luma | vg);
+                                outputBytes[bytesPos++] = (byte)(vgr << 4 | vgb);
                             }
                             else
                             {
@@ -122,26 +123,26 @@ internal static class QoiEncoderInternal
                 else
                 {
                     pixelHashTable[indexPos] = currentPixel;
-                    int vr = (currentPixel >> 16) - (previousPixel >> 16);
-                    int vg = ((currentPixel >> 8) & 0xFF) - ((previousPixel >> 8) & 0xFF);
-                    int vb = (currentPixel & 0xFF) - (previousPixel & 0xFF);
-
-                    if (vr is > -3 and < 2 &&
-                        vg is > -3 and < 2 &&
-                        vb is > -3 and < 2)
+                    int vr = (currentPixel >> 16) - (previousPixel >> 16) + 2;
+                    int vg = ((currentPixel >> 8) & 0xFF) - ((previousPixel >> 8) & 0xFF) + 2;
+                    int vb = (currentPixel & 0xFF) - (previousPixel & 0xFF) + 2;
+                    if ((uint)vr < 4 &&
+                        (uint)vg < 4 &&
+                        (uint)vb < 4)
                     {
-                        outputBytes[bytesPos++] = (byte)(QoiCodec.Diff | (vr + 2) << 4 | (vg + 2) << 2 | (vb + 2));
+                        outputBytes[bytesPos++] = (byte)(QoiCodec.Diff | vr << 4 | vg << 2 | vb);
                     }
                     else
                     {
-                        int vgr = vr - vg;
-                        int vgb = vb - vg;
-                        if (vgr is > -9 and < 8 &&
-                             vg is > -33 and < 32 &&
-                             vgb is > -9 and < 8)
+                        int vgr = vr - vg + 8;
+                        int vgb = vb - vg + 8;
+                        vg += 30; // -2 from the previous calculation and +32 to fit into the range of -32 to 31
+                        if ((uint)vgr < 16 &&
+                             (uint)vgb < 16 &&
+                             (uint)vg < 64)
                         {
-                            outputBytes[bytesPos++] = (byte)(QoiCodec.Luma | (vg + 32));
-                            outputBytes[bytesPos++] = (byte)((vgr + 8) << 4 | (vgb + 8));
+                            outputBytes[bytesPos++] = (byte)(QoiCodec.Luma | vg);
+                            outputBytes[bytesPos++] = (byte)(vgr << 4 | vgb);
                         }
                         else
                         {
@@ -172,7 +173,7 @@ internal static class QoiEncoderInternal
         // Extract components and calculate hash in one expression
         return (((packedPixel >> 16) * 3) +
                 (((packedPixel >> 8) & 0xFF) * 5) +
-                ((packedPixel & 0xFF) * 7) + 2805/*result of Alpha 255 * 11*/)  & 63;
+                ((packedPixel & 0xFF) * 7) + 2805/*result of Alpha 255 * 11*/) & 63;
     }
 
     /// <summary>
@@ -180,7 +181,7 @@ internal static class QoiEncoderInternal
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void WriteHeader(byte[] outputBytes, QoiImage image)
-    { 
+    {
         WriteHeader(outputBytes, image.Width, image.Height, image.Channels, image.ColorSpace);
     }
 

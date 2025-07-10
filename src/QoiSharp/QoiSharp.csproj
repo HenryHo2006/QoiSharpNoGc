@@ -6,7 +6,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<RootNamespace>QoiSharp</RootNamespace>
-		<Optimize>true</Optimize>
+		<!-- <Optimize>true</Optimize> -->
 		
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		

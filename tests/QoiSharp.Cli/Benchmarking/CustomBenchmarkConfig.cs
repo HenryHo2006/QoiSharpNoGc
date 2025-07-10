@@ -10,6 +10,8 @@ public class CustomBenchmarkConfig : ManualConfig
     {
         AddJob(Job.Default.WithRuntime(CoreRuntime.Core80)
             .WithPlatform(Platform.X64)
+            .WithJit(Jit.RyuJit)
+            .WithWarmupCount(1)
             );
         AddDiagnoser(BenchmarkDotNet.Diagnosers.MemoryDiagnoser.Default);
     }
