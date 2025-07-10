@@ -22,7 +22,7 @@ public static class QoiDecoderReference
             throw new QoiDecodingException("File too short");
         }
 
-        if (!QoiCodec.IsValidMagic(data[..4]))
+        if (!QoiCodec.IsValidMagic(data.AsSpan(0, 4)))//Take the first 4 bytes
         {
             throw new QoiDecodingException("Invalid file magic"); // TODO: add magic value
         }

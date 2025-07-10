@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using QoiSharp.Codec;
@@ -9,23 +10,31 @@ namespace QoiSharp.Decoding.Tests;
 
 public class QoiDecoderReferenceTests
 {
-    [Fact]
-    public void RgbDecodingShouldWork()
-    {
-        var qoiImage = new QoiImage(_pngData, 8, 4, Channels.Rgb);
-        var qoiData = QoiDecoderReference.Decode([]);
-        // Assert
-        var img = QoiEncoder.Encode(qoiData);
-        Assert.True(img.SequenceEqual(_pngData));
-        // Assert.Equal(img.Width, qoiImage.Width);
-        // Assert.Equal(img.Height, qoiImage.Height);
-        // Assert.Equal(img.Channels, qoiImage.Channels);
-        // Assert.Equal(img.ColorSpace, qoiImage.ColorSpace);
-    }
+  [Fact]
+  [ExcludeFromCodeCoverage(Justification = "Error with Assert.Throws")]
+  public void Decode_WrongHeader()
+  {
+    //Length to short
+    Assert.Throws<QoiDecodingException>(() => QoiDecoderReference.Decode([]));
+    //Magic not matching
+    Assert.Throws<QoiDecodingException>(() => QoiDecoderReference.Decode(new byte[50]));
+    //With valid magic string
+    var header = new byte[50];
+    BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(0, 4), QoiCodec.Magic);
+    Assert.Throws<QoiDecodingException>(() => QoiDecoderReference.Decode(header));
+    //With valid width setting
+    BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(4, 4), 200);
+    Assert.Throws<QoiDecodingException>(() => QoiDecoderReference.Decode(header));
+    //With huge valid height setting
+    BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(8, 4), int.MaxValue / 2);
+    Assert.Throws<QoiDecodingException>(() => QoiDecoderReference.Decode(header));
+    //With normal valid height setting, chanels missing
+    BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(8, 4), 50);
+    Assert.Throws<QoiDecodingException>(() => QoiDecoderReference.Decode(header));
+  }
 
-
-    private static byte[] _pngData = [
-        130,   0, 212, 124, 204,  88,  79,  26, 210, 104, 117,   4,
+  private static byte[] _pngData = [
+      130,   0, 212, 124, 204,  88,  79,  26, 210, 104, 117,   4,
         137, 191,  80, 204,  65, 175,  38, 160, 207, 182, 174,  59,
          83,  18, 227,   4, 234, 150,  97, 131,  62,  95, 167, 236,
         132, 143,  78, 175,  86, 172, 237, 113, 195,  87, 227, 242,
@@ -33,9 +42,10 @@ public class QoiDecoderReferenceTests
         254, 176, 172, 227,  94, 105, 146, 232, 150,  39, 148, 238,
         105,  65,  23,   4,  33, 252, 243, 111, 120,  32, 150, 144,
          96,  66,   9, 102, 226, 245, 145, 153, 240, 183,  60, 132
-       ];
-    private static byte[] _qoiData = [
-       113, 111, 105, 102,   0,   0,   0,   8,   0,   0,   0,   4,   3,   0, 254, 130,
+     ];
+
+  private static byte[] _qoiData = [
+     113, 111, 105, 102,   0,   0,   0,   8,   0,   0,   0,   4,   3,   0, 254, 130,
       0, 212, 254, 124, 204,  88, 254,  79,  26, 210, 254, 104, 117,   4, 254, 137,
     191,  80, 254, 204,  65, 175, 254,  38, 160, 207, 254, 182, 174,  59, 254,  83,
      18, 227, 254,   4, 234, 150, 254,  97, 131,  62, 254,  95, 167, 236, 254, 132,
@@ -45,5 +55,5 @@ public class QoiDecoderReferenceTests
      65,  23, 254,   4,  33, 252, 254, 243, 111, 120, 254,  32, 150, 144, 254,  96,
      66,   9, 254, 102, 226, 245, 254, 145, 153, 240, 254, 183,  60, 132,   0,   0,
       0,   0,   0,   0,   0,   1
-    ];
+  ];
 }
