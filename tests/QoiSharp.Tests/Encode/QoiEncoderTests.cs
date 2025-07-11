@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using QoiSharp.Codec;
+using QoiSharp.Decoding.Tests;
 using QoiSharp.Exceptions;
 using Xunit;
 
@@ -25,7 +26,7 @@ public class QoiEncoderTests
         Assert.Equal(128 + 64 + 4, qoiData[14 + 4]); //Check run byte
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
 
-        var img = QoiDecoder.Decode(qoiData);
+        var img = QoiDecoderReference.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
         Assert.Equal(img.Width, qoiImage.Width);
         Assert.Equal(img.Height, qoiImage.Height);
@@ -50,7 +51,7 @@ public class QoiEncoderTests
         Assert.Equal(64 + 16 + 4 + 1, qoiData[14 + 4 + 4]);
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
 
-        var img = QoiDecoder.Decode(qoiData);
+        var img = QoiDecoderReference.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
         Assert.Equal(img.Width, qoiImage.Width);
         Assert.Equal(img.Height, qoiImage.Height);
@@ -74,7 +75,7 @@ public class QoiEncoderTests
         Assert.Equal(128 + 64, qoiData[14 + 4]); //Check luma byte1
         Assert.Equal(128 + 16 + 4 + 2, qoiData[14 + 5]); //Check luma byte2
 
-        var img = QoiDecoder.Decode(qoiData);
+        var img = QoiDecoderReference.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
         Assert.Equal(img.Width, qoiImage.Width);
         Assert.Equal(img.Height, qoiImage.Height);
@@ -96,7 +97,7 @@ public class QoiEncoderTests
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 3 + QoiCodec.Padding.Length, qoiData.Length);
 
-        var img = QoiDecoder.Decode(qoiData);
+        var img = QoiDecoderReference.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
     }
 
@@ -115,7 +116,7 @@ public class QoiEncoderTests
         Assert.Equal(8 + 2, qoiData[14 + 8]); //Check index byte
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
 
-        var img = QoiDecoder.Decode(qoiData);
+        var img = QoiDecoderReference.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
         Assert.True(img.Data.SequenceEqual(imageBytes));
         Assert.Equal(img.Width, qoiImage.Width);
@@ -133,7 +134,7 @@ public class QoiEncoderTests
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
 
         // Assert
-        var img = QoiDecoder.Decode(qoiData);
+        var img = QoiDecoderReference.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(_pixelData));
         Assert.Equal(_qoiData, _qoiData);
         Assert.Equal(img.Width, qoiImage.Width);
@@ -158,7 +159,7 @@ public class QoiEncoderTests
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
 
-        var img = QoiDecoder.Decode(qoiData);
+        var img = QoiDecoderReference.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
     }
 
@@ -188,7 +189,7 @@ public class QoiEncoderTests
         byte[] qoiData = QoiEncoder.Encode(qoiImage);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
-        var img = QoiDecoder.Decode(qoiData);
+        var img = QoiDecoderReference.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
     }
 
@@ -204,7 +205,7 @@ public class QoiEncoderTests
         byte[] qoiData = QoiEncoder.Encode(qoiImage);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
-        var img = QoiDecoder.Decode(qoiData);
+        var img = QoiDecoderReference.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
     }
 
@@ -225,7 +226,7 @@ public class QoiEncoderTests
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
 
-        var img = QoiDecoder.Decode(qoiData);
+        var img = QoiDecoderReference.Decode(qoiData);
         Assert.True(img.Data.SequenceEqual(imageBytes));
     }
 

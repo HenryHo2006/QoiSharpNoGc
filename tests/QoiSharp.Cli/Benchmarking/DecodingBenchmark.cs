@@ -1,36 +1,61 @@
 ﻿using BenchmarkDotNet.Attributes;
+using QoiSharp.Codec;
 
 namespace QoiSharp.Cli.Benchmarking;
 
 [Config(typeof(CustomBenchmarkConfig))]
 public class DecodingBenchmark
-{
-    [Benchmark(Description = "QOI Decoding")]
-    public void QoiDecoding()
+{    
+/*
+108*190
+| Method             | dataType | Mean      | Error    | StdDev   | Gen0   | Allocated |
+|------------------- |--------- |----------:|---------:|---------:|-------:|----------:|
+| 'QOI Decoding'     | Diff     |  37.94 us | 0.677 us | 0.779 us | 7.3242 |  60.48 KB |
+| 'QOI Decoding old' | Diff     |  28.12 us | 0.556 us | 0.570 us | 7.3242 |  60.48 KB |
+| 'QOI Decoding'     | Index    |  79.21 us | 1.583 us | 3.198 us | 7.3242 |  60.48 KB |
+| 'QOI Decoding old' | Index    | 101.15 us | 2.001 us | 2.224 us | 7.3242 |  60.48 KB |
+| 'QOI Decoding'     | Luma     |  77.69 us | 1.358 us | 1.270 us | 7.3242 |  60.48 KB |
+| 'QOI Decoding old' | Luma     | 101.30 us | 1.157 us | 1.082 us | 7.3242 |  60.48 KB |
+| 'QOI Decoding'     | Rgb      |  80.10 us | 1.200 us | 1.064 us | 7.3242 |  60.48 KB |
+| 'QOI Decoding old' | Rgb      |  85.20 us | 1.359 us | 1.271 us | 7.3242 |  60.48 KB |
+| 'QOI Decoding'     | Rgba     |  81.28 us | 0.869 us | 0.771 us | 9.7656 |  80.52 KB |
+| 'QOI Decoding old' | Rgba     |  86.50 us | 0.929 us | 0.776 us | 9.7656 |  80.52 KB |
+| 'QOI Decoding'     | Run      |  41.12 us | 0.814 us | 1.836 us | 7.3242 |  60.48 KB |
+| 'QOI Decoding old' | Run      |  31.19 us | 0.604 us | 1.376 us | 7.3242 |  60.48 KB |
+
+*/
+
+    // [Params(nameof(QoiCodec.Run), "RgbaRun", "RgbaAlphaRandomRun", nameof(QoiCodec.Index), "RgbaIndex", nameof(QoiCodec.Luma), "RgbaLuma")]
+    // [Params(nameof(QoiCodec.Luma), "RgbaLuma", "RgbaAlphaRandomRun", nameof(QoiCodec.Rgb))]
+    [Params(nameof(QoiCodec.Rgb), nameof(QoiCodec.Rgba), nameof(QoiCodec.Luma), nameof(QoiCodec.Diff), nameof(QoiCodec.Run), nameof(QoiCodec.Index))]
+    public string dataType = "";
+
+    [GlobalSetup]
+    public void Setup()
     {
-        byte[] data = QoiDecoder.Decode(_qoiData).Data;
+        var height = 108;
+        var width = 190;
+        var channel = Channels.Rgb;
+        byte[] data = CustomBenchmarkConfig.CreateTestData(height, width, ref channel, dataType);
+        _qoiData = QoiEncoder.Encode(new QoiImage(data, width, height, channel));
+        QoiDataStream = new MemoryStream(_qoiData);
+        _streamCopyTarget = new byte[height * width * 5 + 30];
     }
- private static byte[] _pngData = [
-    130,   0, 212, 124, 204,  88,  79,  26, 210, 104, 117,   4,
-    137, 191,  80, 204,  65, 175,  38, 160, 207, 182, 174,  59,
-     83,  18, 227,   4, 234, 150,  97, 131,  62,  95, 167, 236,
-    132, 143,  78, 175,  86, 172, 237, 113, 195,  87, 227, 242,
-     13, 189, 125,  33,  16,  79, 165, 247, 216, 193, 192, 113,
-    254, 176, 172, 227,  94, 105, 146, 232, 150,  39, 148, 238,
-    105,  65,  23,   4,  33, 252, 243, 111, 120,  32, 150, 144,
-     96,  66,   9, 102, 226, 245, 145, 153, 240, 183,  60, 132
- ];
- 
- private static byte[] _qoiData = [
-       113, 111, 105, 102,   0,   0,   0,   8,   0,   0,   0,   4,   3,   0, 254, 130,
-      0, 212, 254, 124, 204,  88, 254,  79,  26, 210, 254, 104, 117,   4, 254, 137,
-    191,  80, 254, 204,  65, 175, 254,  38, 160, 207, 254, 182, 174,  59, 254,  83,
-     18, 227, 254,   4, 234, 150, 254,  97, 131,  62, 254,  95, 167, 236, 254, 132,
-    143,  78, 254, 175,  86, 172, 254, 237, 113, 195, 254,  87, 227, 242, 254,  13,
-    189, 125, 254,  33,  16,  79, 254, 165, 247, 216, 254, 193, 192, 113, 254, 254,
-    176, 172, 254, 227,  94, 105, 254, 146, 232, 150, 254,  39, 148, 238, 254, 105,
-     65,  23, 254,   4,  33, 252, 254, 243, 111, 120, 254,  32, 150, 144, 254,  96,
-     66,   9, 254, 102, 226, 245, 254, 145, 153, 240, 254, 183,  60, 132,   0,   0,
-      0,   0,   0,   0,   0,   1
-    ];
+
+    public QoiImage Image = new([], 0, 0, Channels.Rgb);
+    public MemoryStream QoiDataStream = new MemoryStream();
+    private byte[] _streamCopyTarget = [];
+    private byte[] _qoiData = [];
+
+    [Benchmark(Description = "QOI Decoding")]
+    public QoiImage QoiDecoding()
+    {
+        return QoiDecoder.Decode(_qoiData);
+    }
+
+    [Benchmark(Description = "QOI Decoding old")]
+    public QoiImage QoiDecoding_old()
+    {
+        return QoiDecoderOld.Decode(_qoiData);
+    }
 }

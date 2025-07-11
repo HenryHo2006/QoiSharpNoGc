@@ -9,29 +9,29 @@ using Xunit;
 
 namespace QoiSharp.Decoding.Tests;
 
-public class QoiDecoderReferenceTests
+public class QoiDecoderTests
 {
   [Fact]
   [ExcludeFromCodeCoverage(Justification = "Error with Assert.Throws")]
   public void Decode_WrongHeader()
   {
     //Length to short
-    Assert.Throws<QoiDecodingException>(() => QoiDecoderReference.Decode([]));
+    Assert.Throws<QoiDecodingException>(() => QoiDecoder.Decode([]));
     //Magic not matching
-    Assert.Throws<QoiDecodingException>(() => QoiDecoderReference.Decode(new byte[50]));
+    Assert.Throws<QoiDecodingException>(() => QoiDecoder.Decode(new byte[50]));
     //With valid magic string
     var header = new byte[50];
     BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(0, 4), QoiCodec.Magic);
-    Assert.Throws<QoiDecodingException>(() => QoiDecoderReference.Decode(header));
+    Assert.Throws<QoiDecodingException>(() => QoiDecoder.Decode(header));
     //With valid width setting
     BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(4, 4), 200);
-    Assert.Throws<QoiDecodingException>(() => QoiDecoderReference.Decode(header));
+    Assert.Throws<QoiDecodingException>(() => QoiDecoder.Decode(header));
     //With huge valid height setting
     BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(8, 4), int.MaxValue / 2);
-    Assert.Throws<QoiDecodingException>(() => QoiDecoderReference.Decode(header));
+    Assert.Throws<QoiDecodingException>(() => QoiDecoder.Decode(header));
     //With normal valid height setting, chanels missing
     BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(8, 4), 50);
-    Assert.Throws<QoiDecodingException>(() => QoiDecoderReference.Decode(header));
+    Assert.Throws<QoiDecodingException>(() => QoiDecoder.Decode(header));
   }
 
   [Fact]
@@ -41,7 +41,7 @@ public class QoiDecoderReferenceTests
     byte[] data = { QoiCodec.Rgb, 12, 13, 14, QoiCodec.Run | 2 };
     byte[] qoiImageData = CreateQoiImageData(data, Channels.Rgb);
     qoiImageData[^1] = 200;
-    Assert.Throws<InvalidOperationException>(() => QoiDecoderReference.Decode(qoiImageData));
+    Assert.Throws<InvalidOperationException>(() => QoiDecoder.Decode(qoiImageData));
   }
 
   [Fact]
@@ -49,7 +49,7 @@ public class QoiDecoderReferenceTests
   {
     byte[] data = { QoiCodec.Rgb, 12, 13, 14, QoiCodec.Run | 2 };
     byte[] qoiImageData = CreateQoiImageData(data, Channels.Rgb);
-    var decoded = QoiDecoderReference.Decode(qoiImageData);
+    var decoded = QoiDecoder.Decode(qoiImageData);
     Assert.Equal(2, decoded.Width);
     Assert.Equal(2, decoded.Height);
     Assert.Equal(4 * 3, decoded.Data.Length);
@@ -65,7 +65,7 @@ public class QoiDecoderReferenceTests
   {
     byte[] data = { QoiCodec.Rgba, 12, 13, 14, 200, QoiCodec.Run | 2 };
     byte[] qoiImageData = CreateQoiImageData(data, Channels.RgbWithAlpha);
-    var decoded = QoiDecoderReference.Decode(qoiImageData);
+    var decoded = QoiDecoder.Decode(qoiImageData);
     Assert.Equal(2, decoded.Width);
     Assert.Equal(2, decoded.Height);
     Assert.Equal(4 * 4, decoded.Data.Length);
@@ -83,7 +83,7 @@ public class QoiDecoderReferenceTests
       90, 90, 127
     };
     byte[] qoiImageData = CreateQoiImageData(data, Channels.Rgb);
-    var decoded = QoiDecoderReference.Decode(qoiImageData);
+    var decoded = QoiDecoder.Decode(qoiImageData);
     Assert.Equal(2, decoded.Width);
     Assert.Equal(2, decoded.Height);
     Assert.Equal(QoiEncoderReference.Encode(decoded).AsSpan(14, 7), data.AsSpan(0, 7));
@@ -101,7 +101,7 @@ public class QoiDecoderReferenceTests
       170,136,170,136,151,120
     };
     byte[] qoiImageData = CreateQoiImageData(data, Channels.Rgb);
-    var decoded = QoiDecoderReference.Decode(qoiImageData);
+    var decoded = QoiDecoder.Decode(qoiImageData);
     Assert.Equal(2, decoded.Width);
     Assert.Equal(2, decoded.Height);
     Assert.Equal(QoiEncoderReference.Encode(decoded).AsSpan(14, 10), data.AsSpan(0, 10));
@@ -120,7 +120,7 @@ public class QoiDecoderReferenceTests
       24,22
     };
     byte[] qoiImageData = CreateQoiImageData(data, Channels.Rgb);
-    var decoded = QoiDecoderReference.Decode(qoiImageData);
+    var decoded = QoiDecoder.Decode(qoiImageData);
     Assert.Equal(2, decoded.Width);
     Assert.Equal(2, decoded.Height);
     Assert.Equal(QoiEncoderReference.Encode(decoded).AsSpan(14, 10), data.AsSpan(0, 10));
