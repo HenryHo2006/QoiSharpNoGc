@@ -110,8 +110,12 @@ public class DecodingBenchmark
     }
 
     [Benchmark(Description = "QOI Decoding Stream")]
-    public Stream QoiDecoding_Span()
+    public Span<byte> QoiDecoding_Span()
     {
-        return new QoiDecoderStream(QoiDataStream);
+        QoiDataStream.Position = 0;
+        var stream = new QoiDecoderStream(QoiDataStream);
+        var readBytes = stream.Read(_streamCopyTarget, 0, _streamCopyTarget.Length);
+        stream.Flush();
+        return _streamCopyTarget.AsSpan(0, readBytes);
     }
 }

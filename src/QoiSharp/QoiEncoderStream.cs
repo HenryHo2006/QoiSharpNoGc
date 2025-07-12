@@ -20,7 +20,7 @@ public class QoiEncoderStream : Stream
         {
             throw new QoiEncodingException($"Invalid height: {imageSize.Height}.");
         }
-        
+
         PixelStream = pixelStream;
         ImageSize = imageSize;
         Channels = channels;
@@ -132,13 +132,13 @@ public class QoiEncoderStream : Stream
     private int CopyBytesToOutputBuffer(byte[] buffer, int bufferOffset, int bytesWrittenTotal, int remainingBytesToWriteBack)
     {
         var bytesToWriteOut = Math.Min(remainingBytesToWriteBack, outputPixelLength - outputPixelStartPos);
-        outputBytesBuffer.AsMemory(outputPixelStartPos, bytesToWriteOut).CopyTo(buffer.AsMemory(bufferOffset + bytesWrittenTotal, bytesToWriteOut));
+        outputBytesBuffer.AsMemory(outputPixelStartPos, bytesToWriteOut).CopyTo(buffer.AsMemory(bufferOffset, bytesToWriteOut));
         outputPixelStartPos = bytesToWriteOut == outputPixelLength - outputPixelStartPos
             ? 0
             //we have some more bytes to write out, so cache them for the next read
             : bytesToWriteOut + outputPixelStartPos;
         bytesWrittenTotal += bytesToWriteOut;
-        if (outputPixelStartPos == 0)
+        if (outputPixelStartPos == 0 || remainingBytesToWriteBack == 0)
         {
             outputPixelLength = 0; // Reset if the end of the output buffer was reached
         }

@@ -2,11 +2,13 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using QoiSharp.Codec;
 using QoiSharp.Encoding.Tests;
 using QoiSharp.Exceptions;
+using QoiSharp.Tests;
 using Xunit;
 
 namespace QoiSharp.Decoding.Tests;
@@ -94,6 +96,8 @@ public class QoiDecoderStreamTests
     byte[] qoiData = QoiEncoderReference.Encode(qoiImage);
     var decoded = new QoiDecoderStream(new MemoryStream(qoiData));
     Assert.Equal(imageBytes, decoded.ToByteArray());
+    decoded = new QoiDecoderStream(new MemoryStream(qoiData));
+    Assert.Equal(imageBytes, decoded.ReturnByteByByte().ToArray());
   }
 
   [Fact]
@@ -148,11 +152,13 @@ public class QoiDecoderStreamTests
     var decoded = new QoiDecoderStream(new MemoryStream(qoiImageData));
     Assert.Equal(2, decoded.ImageSize.Width);
     Assert.Equal(2, decoded.ImageSize.Height);
-    // Assert.Equal(QoiEncoderReference.Encode(decoded).AsSpan(14, 10), data.AsSpan(0, 10));
-    // Assert.Equal(new byte[] {
-    //      112, 113, 114, 50, 190, 3,
-    //      112, 113, 114, 50, 190, 3},
-    //    decoded.Data);
+    var result = decoded.ToByteArray();
+    Assert.Equal(QoiEncoderReference.Encode(new QoiImage(result, decoded.ImageSize.Width, decoded.ImageSize.Height, decoded.Channels))
+      .AsSpan(14, 10), data.AsSpan(0, 10));
+    Assert.Equal(new byte[] {
+         112, 113, 114, 50, 190, 3,
+         112, 113, 114, 50, 190, 3},
+       result);
   }
 
   [Fact]
@@ -170,6 +176,50 @@ public class QoiDecoderStreamTests
     Assert.Equal(img.ImageSize.Height, qoiImage.Height);
     Assert.Equal(img.Channels, qoiImage.Channels);
     Assert.Equal(img.ColorSpace, qoiImage.ColorSpace);
+  }
+
+  [Theory]
+  // [InlineData(nameof(QoiCodec.Rgb))]
+  // [InlineData(nameof(QoiCodec.Luma))]
+  // [InlineData(nameof(QoiCodec.Index))]
+
+  [InlineData(nameof(QoiCodec.Rgba))]
+  // [InlineData(nameof(QoiCodec.Run))]
+  public void RgbEncoding_Big(string dataType)
+  {
+    QoiImage qoiImage = Helper.CreateExampleData(dataType, 108, 90);
+    var qoiStream = new QoiEncoderStream(new MemoryStream(qoiImage.Data), new Size(108, 90), qoiImage.Channels);
+    var stream = new QoiDecoderStream(qoiStream);
+    var decoded = stream.ToByteArray();
+    Assert.Equal(qoiImage.Data, decoded);
+
+    Assert.Equal(stream.ImageSize.Width, qoiImage.Width);
+    Assert.Equal(stream.ImageSize.Height, qoiImage.Height);
+    Assert.Equal(stream.Channels, qoiImage.Channels);
+    Assert.Equal(stream.ColorSpace, qoiImage.ColorSpace);
+  }
+
+
+  [Fact]
+  public void CanSeek()
+  {
+    var stream = new QoiDecoderStream(new MemoryStream(_qoiData));
+    stream.Flush();
+    Assert.False(stream.CanSeek);
+    Assert.False(stream.CanWrite);
+  }
+
+  [Fact]
+  [ExcludeFromCodeCoverage(Justification = "Error with Assert.Throws")]
+  public void NonAvailableStreamFunctions()
+  {
+    var stream = new QoiDecoderStream(new MemoryStream(_qoiData));
+    Assert.Throws<NotSupportedException>(() => stream.Length);
+    Assert.Throws<NotSupportedException>(() => stream.Position);
+    Assert.Throws<NotSupportedException>(() => stream.Position = 34);
+    Assert.Throws<NotSupportedException>(() => stream.Seek(0, SeekOrigin.Begin));
+    Assert.Throws<NotSupportedException>(() => stream.SetLength(0));
+    Assert.Throws<NotSupportedException>(() => stream.Write(new byte[0], 0, 1));
   }
 
   private static byte[] CreateQoiImageData(byte[] playload, Channels channels)

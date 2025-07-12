@@ -13,7 +13,7 @@ public class QoiDecoderStream : Stream
 {
     public QoiDecoderStream(Stream qoiStream)
     {
-        var qoiData = new byte[QoiCodec.HeaderSize];
+        byte[] qoiData = new byte[QoiCodec.HeaderSize];
         if (qoiStream.Read(qoiData, 0, qoiData.Length) != qoiData.Length)
         {
             throw new QoiDecodingException("QOI header too short");
@@ -66,10 +66,14 @@ public class QoiDecoderStream : Stream
     private int qoiInputBufferLength = 0;
     private int outputPixelStartPos = 0;
     private int outputPixelLength = 0;
-    private long pixelsLeftToWrite = 0;
+    private long pixelsLeftToWrite
+    {
+        get;
+        set;
+    } = 0;
     private int[] pixelHashTable = new int[QoiCodec.HashTableSize];
     private int currentPixel = 255;
-    private int runLength = 0;
+    private int runLength = -1;
     private bool reachedEndOfStream = false;
 
     public override int Read(byte[] buffer, int offset, int count)
@@ -89,19 +93,16 @@ public class QoiDecoderStream : Stream
         {
             return bytesWrittenTotal;
         }
-        //Read up to the buffer size from he output
-        qoiInputBufferLength = qoiDataStream.Read(qoiInputBuffer, 0, qoiInputBuffer.Length);
         int p = qoiInputBufferPosition;
-
-        var bytesToWrite = Math.Min(remainingBytesToWriteBack, Math.Min(pixelsLeftToWrite, pixelOutputBuffer.Length));
 
         byte r = 0;
         byte g = 0;
         byte b = 0;
         do
         {
+            var bytesToWrite = Math.Min(remainingBytesToWriteBack, Math.Min(pixelsLeftToWrite, pixelOutputBuffer.Length));
             int pxPos = 0;
-            for (; runLength > 0; runLength--)
+            for (; runLength >= 0; runLength--)
             {
                 SetPixels(Channels, pixelOutputBuffer, currentPixel, pxPos);
                 pxPos += (byte)Channels;
@@ -133,12 +134,20 @@ public class QoiDecoderStream : Stream
                     else
                     {
                         runLength = b1 & 0x3F;
-                        for (; runLength > 0; runLength--)
+                        for (; runLength > 0 && pxPos < bytesToWrite; runLength--)
                         {
                             SetPixels(Channels, pixelOutputBuffer, currentPixel, pxPos);
                             pxPos += (byte)Channels;
                         }
-                        SetPixels(Channels, pixelOutputBuffer, currentPixel, pxPos);
+                        if (pxPos < bytesToWrite)
+                        {
+                            runLength--;
+                            SetPixels(Channels, pixelOutputBuffer, currentPixel, pxPos);
+                        }
+                        else
+                        {
+                            break;
+                        }
                         continue;
                     }
                 }
@@ -178,7 +187,7 @@ public class QoiDecoderStream : Stream
 
                 SetPixels(Channels, pixelOutputBuffer, currentPixel, pxPos);
             }
-            pixelsLeftToWrite -= pxPos;
+            // pxPos -= (byte)Channels;
             outputPixelLength = pxPos;
             bytesWrittenTotal = CopyBytesToOutputBuffer(buffer, offset, bytesWrittenTotal, remainingBytesToWriteBack);
             if (bytesWrittenTotal == remainingBytesToWriteBack)
@@ -228,10 +237,11 @@ public class QoiDecoderStream : Stream
             //we have some more bytes to write out, so cache them for the next read
             : bytesToWriteOut + outputPixelStartPos;
         bytesWrittenTotal += bytesToWriteOut;
-        if (outputPixelStartPos == 0)
+        if (outputPixelStartPos == 0 || remainingBytesToWriteBack == 0)
         {
             outputPixelLength = 0; // Reset if the end of the output buffer was reached
         }
+        pixelsLeftToWrite -= bytesToWriteOut;
         return bytesWrittenTotal;
     }
 
