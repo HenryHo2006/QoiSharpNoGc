@@ -48,7 +48,7 @@ public static class QoiDecoder
         }
 
         int[] intIndex = new int[QoiCodec.HashTableSize];
-        if (channels == 3) // TODO: delete
+        if (channels == 3) 
         {
             for (int indexPos = 0; indexPos < intIndex.Length; indexPos++)
             {
@@ -57,25 +57,19 @@ public static class QoiDecoder
         }
 
         byte[] pixels = new byte[width * height * channels];
+        int p = QoiCodec.HeaderSize;
+
+        int rgba = 255;
+        int runLength;
 
         byte r = 0;
         byte g = 0;
         byte b = 0;
-        int rgba = 255;
-        Span<byte> tmpSpan = stackalloc byte[4];
-        int run = 0;
-        int p = QoiCodec.HeaderSize;
-
         for (int pxPos = 0; pxPos < pixels.Length; pxPos += channels)
         {
-            if (run > 0)
+            byte b1 = qoiData[p++];
+            if (b1 >> 6 == 3)
             {
-                run--;
-            }
-            else
-            {
-                byte b1 = qoiData[p++];
-
                 if (b1 == QoiCodec.Rgb)
                 {
                     rgba = qoiData[p++] << 24 | qoiData[p++] << 16 | qoiData[p++] << 8 | (rgba & 0xFF);
@@ -85,11 +79,21 @@ public static class QoiDecoder
                     rgba = BinaryPrimitives.ReadInt32BigEndian(qoiData.AsSpan(p, 4));
                     p += 4;
                 }
-                else if ((b1 & QoiCodec.Mask2) == QoiCodec.Index)
+                else
                 {
-                    rgba = intIndex[b1 & ~QoiCodec.Mask2];
+                    runLength = b1 & 0x3F;
+                    for (int i = runLength; i > 0; i--)
+                    {
+                        SetPixels(channels, pixels, rgba, pxPos);
+                        pxPos += channels;
+                    }
+                    SetPixels(channels, pixels, rgba, pxPos);
+                    continue;
                 }
-                else if ((b1 & QoiCodec.Mask2) == QoiCodec.Diff)
+            }
+            else
+            {
+                if ((b1 & QoiCodec.Mask2) == QoiCodec.Diff)
                 {
                     r = (byte)(rgba >> 24);
                     g = (byte)(rgba >> 16);
@@ -111,21 +115,17 @@ public static class QoiDecoder
                     b += (byte)(vg - 8 + (b2 & 0x0F));
                     rgba = r << 24 | g << 16 | b << 8 | (rgba & 0xFF);
                 }
-                else if ((b1 & QoiCodec.Mask2) == QoiCodec.Run)
+                else //b1 is an index
                 {
-                    run = b1 & 0x3F;
+                    rgba = intIndex[b1 & ~QoiCodec.Mask2];
+                    SetPixels(channels, pixels, rgba, pxPos);
+                    continue;
                 }
-                var indexPos3 = CalculateHashTableRgbaIndex(rgba);
-                intIndex[indexPos3] = rgba;
             }
+            var indexPos3 = QoiCodec.CalculateHashTableRgbaIndex(rgba);
+            intIndex[indexPos3] = rgba;
 
-            pixels[pxPos] = (byte)(rgba >> 24);
-            pixels[pxPos + 1] = (byte)(rgba >> 16);
-            pixels[pxPos + 2] = (byte)(rgba >> 8);
-            if (channels == 4)
-            {
-                pixels[pxPos + 3] = (byte)rgba;
-            }
+            SetPixels(channels, pixels, rgba, pxPos);
         }
 
         int pixelsEnd = qoiData.Length - QoiCodec.Padding.Length;
@@ -141,12 +141,14 @@ public static class QoiDecoder
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int CalculateHashTableRgbaIndex(int packedPixel)
+    private static void SetPixels(byte channels, byte[] pixels, int rgba, int pxPos)
     {
-        // Extract components and calculate hash in one expression
-        return (((packedPixel >> 24) * 3) +
-                (((packedPixel >> 16) & 0xFF) * 5) +
-                (((packedPixel >> 8) & 0xFF) * 7) +
-                ((packedPixel & 0xFF) * 11)) & 63;
+        pixels[pxPos] = (byte)(rgba >> 24);
+        pixels[pxPos + 1] = (byte)(rgba >> 16);
+        pixels[pxPos + 2] = (byte)(rgba >> 8);
+        if (channels == 4)
+        {
+            pixels[pxPos + 3] = (byte)rgba;
+        }
     }
 }

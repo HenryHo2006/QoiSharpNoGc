@@ -4,15 +4,15 @@ using StbImageSharp;
 
 public static class Program
 {
-    public static async Task Main()
+    public static void Main()
     {
-        string imagePath = "Resources\\SomeImage.png";
+        // string imagePath = "Resources\\SomeImage.png";
 
-        var img = ImageResult.FromMemory(await File.ReadAllBytesAsync(imagePath), ColorComponents.RedGreenBlueAlpha);
-        var qoiImage = new QoiImage(img.Data, img.Width, img.Height, (Channels)img.Comp);
-        byte[] qoiData = QoiEncoderReference.Encode(qoiImage);
+        // var img = ImageResult.FromMemory(await File.ReadAllBytesAsync(imagePath), ColorComponents.RedGreenBlueAlpha);
+        // var qoiImage = new QoiImage(img.Data, img.Width, img.Height, (Channels)img.Comp);
+        // byte[] qoiData = QoiEncoderReference.Encode(qoiImage);
         
         // saving image
-        await File.WriteAllBytesAsync("MyImage.qoi", qoiData);
+        // await File.WriteAllBytesAsync("MyImage.qoi", qoiData);
     }
 }

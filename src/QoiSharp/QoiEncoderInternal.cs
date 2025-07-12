@@ -35,7 +35,7 @@ internal static class QoiEncoderInternal
                     outputBytes[bytesPos++] = (byte)(QoiCodec.Run | (run - 1));
                     run = 0;
                 }
-                int indexPos = CalculateHashTableRgbaIndex(currentPixel);
+                int indexPos = QoiCodec.CalculateHashTableRgbaIndex(currentPixel);
                 if (currentPixel == pixelHashTable[indexPos])
                 {
                     outputBytes[bytesPos++] = (byte)(QoiCodec.Index | (indexPos));
@@ -155,16 +155,6 @@ internal static class QoiEncoderInternal
             previousPixel = currentPixel;
         }
         return (previousPixel, run, bytesPos);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int CalculateHashTableRgbaIndex(int packedPixel)
-    {
-        // Extract components and calculate hash in one expression
-        return (((packedPixel >> 24) * 3) +
-                (((packedPixel >> 16) & 0xFF) * 5) +
-                (((packedPixel >> 8) & 0xFF) * 7) +
-                ((packedPixel & 0xFF) * 11)) & 63;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

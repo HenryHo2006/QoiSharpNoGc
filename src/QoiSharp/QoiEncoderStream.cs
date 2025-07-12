@@ -76,7 +76,6 @@ public class QoiEncoderStream : Stream
                 return bytesWrittenTotal;
             }
             remainingBytesToWriteBack = count - offset - bytesWrittenTotal;
-
         }
         if (endOfStreamWritteToBuffer)
         {

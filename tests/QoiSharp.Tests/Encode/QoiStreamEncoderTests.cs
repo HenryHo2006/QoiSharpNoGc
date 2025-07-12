@@ -370,7 +370,7 @@ public static class QoiEncoderStreamExtensions
     /// </summary>
     /// <param name="stream">QOI encoder stream.</param>
     /// <returns>Byte array of the encoded QOI data.</returns>
-    public static byte[] ToByteArray(this QoiEncoderStream stream)
+    public static byte[] ToByteArray(this Stream stream)
     {
         using var memoryStream = new MemoryStream();
         stream.CopyTo(memoryStream);
@@ -382,7 +382,7 @@ public static class QoiEncoderStreamExtensions
     /// </summary>
     /// <param name="stream">QOI encoder stream.</param>
     /// <returns>Byte array of the encoded QOI data.</returns>
-    public static IEnumerable<byte> ReturnByteByByte(this QoiEncoderStream stream)
+    public static IEnumerable<byte> ReturnByteByByte(this Stream stream)
     {
         byte[] buffer = new byte[1];
         while (stream.Read(buffer, 0, 1) > 0)
