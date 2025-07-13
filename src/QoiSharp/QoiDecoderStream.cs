@@ -79,11 +79,12 @@ public class QoiDecoderStream : Stream
     public override int Read(byte[] buffer, int offset, int count)
     {
         int bytesWrittenTotal = 0;
+        var bytesToWriteToBuffer = count - offset;
         int remainingBytesToWriteBack = count - offset;
         if (outputPixelLength > 0)
         {
             bytesWrittenTotal = CopyBytesToOutputBuffer(buffer, offset, bytesWrittenTotal, remainingBytesToWriteBack);
-            if (bytesWrittenTotal == remainingBytesToWriteBack)
+            if (bytesWrittenTotal == bytesToWriteToBuffer)
             {
                 return bytesWrittenTotal;
             }
@@ -109,14 +110,7 @@ public class QoiDecoderStream : Stream
             }
             for (; pxPos < bytesToWrite; pxPos += (byte)Channels)
             {
-                if (qoiInputBufferPosition + 5 >= qoiInputBufferLength)
-                {
-                    qoiInputBufferLength = ReadMoreBytesFromInput();
-                    if (qoiInputBufferLength < QoiCodec.Padding.Length)
-                    {
-                        throw new QoiDecodingException($"Input stream added abruptly.");
-                    }
-                }
+                ReadMoreBytesFromInputIfNecessary();
 
                 byte b1 = qoiInputBuffer[qoiInputBufferPosition++];
                 if (b1 >> 6 == 3)
@@ -190,14 +184,15 @@ public class QoiDecoderStream : Stream
             // pxPos -= (byte)Channels;
             outputPixelLength = pxPos;
             bytesWrittenTotal = CopyBytesToOutputBuffer(buffer, offset, bytesWrittenTotal, remainingBytesToWriteBack);
-            if (bytesWrittenTotal == remainingBytesToWriteBack)
+            if (bytesWrittenTotal == bytesToWriteToBuffer)
             {
                 return bytesWrittenTotal;
             }
             remainingBytesToWriteBack = (int)Math.Min(pixelsLeftToWrite, count - offset - bytesWrittenTotal);
-            bytesToWrite = Math.Min(remainingBytesToWriteBack, Math.Min(pixelsLeftToWrite, pixelOutputBuffer.Length));
         }
         while (remainingBytesToWriteBack > 0 && pixelsLeftToWrite > 0);
+
+        //Check the end of the stream
         reachedEndOfStream = true;
         if (qoiInputBufferLength - qoiInputBufferPosition < QoiCodec.Padding.Length)
         {
@@ -218,13 +213,28 @@ public class QoiDecoderStream : Stream
         return bytesWrittenTotal;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ReadMoreBytesFromInputIfNecessary()
+    {
+        //Longest possible QOI block is 5 bytes, so we need to ensure that we have at least 5 bytes available
+        if (qoiInputBufferPosition + 5 >= qoiInputBufferLength)
+        {
+            qoiInputBufferLength = ReadMoreBytesFromInput();
+            if (qoiInputBufferLength < QoiCodec.Padding.Length)
+            {
+                throw new QoiDecodingException($"Input stream added abruptly.");
+            }
+        }
+    }
+
     private int ReadMoreBytesFromInput()
     {
         var remainingBytes = qoiInputBufferLength - qoiInputBufferPosition;
         qoiInputBuffer.AsSpan(qoiInputBufferPosition, remainingBytes)
             .CopyTo(qoiInputBuffer.AsSpan(0, remainingBytes));
-        qoiInputBufferLength = qoiDataStream.Read(qoiInputBuffer, remainingBytes, qoiInputBuffer.Length - remainingBytes)
-            + remainingBytes;
+        qoiInputBufferLength = qoiDataStream.Read(qoiInputBuffer, remainingBytes, qoiInputBuffer.Length - remainingBytes);
+        qoiInputBufferLength += remainingBytes;
+        qoiInputBufferPosition = 0;
         return qoiInputBufferLength;
     }
 

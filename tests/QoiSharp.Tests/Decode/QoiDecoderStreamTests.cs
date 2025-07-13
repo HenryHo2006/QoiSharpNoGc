@@ -179,12 +179,11 @@ public class QoiDecoderStreamTests
   }
 
   [Theory]
-  // [InlineData(nameof(QoiCodec.Rgb))]
-  // [InlineData(nameof(QoiCodec.Luma))]
-  // [InlineData(nameof(QoiCodec.Index))]
-
+  [InlineData(nameof(QoiCodec.Rgb))]
+  [InlineData(nameof(QoiCodec.Luma))]
+  [InlineData(nameof(QoiCodec.Index))]
   [InlineData(nameof(QoiCodec.Rgba))]
-  // [InlineData(nameof(QoiCodec.Run))]
+  [InlineData(nameof(QoiCodec.Run))]
   public void RgbEncoding_Big(string dataType)
   {
     QoiImage qoiImage = Helper.CreateExampleData(dataType, 108, 90);

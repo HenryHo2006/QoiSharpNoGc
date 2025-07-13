@@ -175,7 +175,7 @@ public class QoiStreamEncoderTests
         Assert.Equal(img.Channels, qoiImage.Channels);
         Assert.Equal(img.ColorSpace, qoiImage.ColorSpace);
     }
-
+//TOD Add test with length and 5 items at a time returned.
     [Fact]
     public void RgbEncodingShouldWork()
     {

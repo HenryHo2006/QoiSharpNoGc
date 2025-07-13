@@ -67,15 +67,16 @@ public class QoiEncoderStream : Stream
     {
         int read;
         int bytesWrittenTotal = 0;
+        var bytesToWriteToBuffer = count - offset;
         int remainingBytesToWriteBack = count - offset;
         if (outputPixelLength > 0)
         {
             bytesWrittenTotal = CopyBytesToOutputBuffer(buffer, offset, bytesWrittenTotal, remainingBytesToWriteBack);
-            if (bytesWrittenTotal == remainingBytesToWriteBack)
+            if (bytesWrittenTotal == bytesToWriteToBuffer)
             {
                 return bytesWrittenTotal;
             }
-            remainingBytesToWriteBack = count - offset - bytesWrittenTotal;
+            remainingBytesToWriteBack = bytesToWriteToBuffer - bytesWrittenTotal;
         }
         if (endOfStreamWritteToBuffer)
         {
@@ -95,11 +96,11 @@ public class QoiEncoderStream : Stream
                : QoiEncoderInternal.RunRgbCompression(pixelInputBuffer, outputBytesBuffer, 0, read, equalPixelRun, previousPixel, pixelHashTable);
             //Write the output bytes from the encoded block to the stream
             bytesWrittenTotal = CopyBytesToOutputBuffer(buffer, offset, bytesWrittenTotal, remainingBytesToWriteBack);
-            if (bytesWrittenTotal == remainingBytesToWriteBack)
+            if (bytesWrittenTotal == bytesToWriteToBuffer)
             {
                 return bytesWrittenTotal;
             }
-            remainingBytesToWriteBack = count - offset - bytesWrittenTotal;
+            remainingBytesToWriteBack = bytesToWriteToBuffer - bytesWrittenTotal;
         }
         while (true);
         long expectedPixelLength = (long)ImageSize.Width * ImageSize.Height * (int)Channels;
@@ -114,11 +115,11 @@ public class QoiEncoderStream : Stream
             outputPixelLength = 1;
             equalPixelRun = 0;
             bytesWrittenTotal = CopyBytesToOutputBuffer(buffer, offset, bytesWrittenTotal, remainingBytesToWriteBack);
-            if (bytesWrittenTotal == remainingBytesToWriteBack)
+            if (bytesWrittenTotal == bytesToWriteToBuffer)
             {
                 return bytesWrittenTotal;
             }
-            remainingBytesToWriteBack = count - offset - bytesWrittenTotal;
+            remainingBytesToWriteBack = bytesToWriteToBuffer - bytesWrittenTotal;
         }
 
         QoiCodec.Padding.AsMemory().CopyTo(outputBytesBuffer.AsMemory(0, QoiCodec.Padding.Length));
@@ -132,13 +133,14 @@ public class QoiEncoderStream : Stream
     private int CopyBytesToOutputBuffer(byte[] buffer, int bufferOffset, int bytesWrittenTotal, int remainingBytesToWriteBack)
     {
         var bytesToWriteOut = Math.Min(remainingBytesToWriteBack, outputPixelLength - outputPixelStartPos);
-        outputBytesBuffer.AsMemory(outputPixelStartPos, bytesToWriteOut).CopyTo(buffer.AsMemory(bufferOffset, bytesToWriteOut));
+        outputBytesBuffer.AsMemory(outputPixelStartPos, bytesToWriteOut)
+            .CopyTo(buffer.AsMemory(bufferOffset + bytesWrittenTotal, bytesToWriteOut));
         outputPixelStartPos = bytesToWriteOut == outputPixelLength - outputPixelStartPos
             ? 0
             //we have some more bytes to write out, so cache them for the next read
             : bytesToWriteOut + outputPixelStartPos;
         bytesWrittenTotal += bytesToWriteOut;
-        if (outputPixelStartPos == 0 || remainingBytesToWriteBack == 0)
+        if (outputPixelStartPos == 0)
         {
             outputPixelLength = 0; // Reset if the end of the output buffer was reached
         }
