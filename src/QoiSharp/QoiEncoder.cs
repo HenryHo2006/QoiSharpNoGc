@@ -41,8 +41,8 @@ public static class QoiEncoder
         int p = QoiCodec.HeaderSize;
 
         (_, int run, p) = channels == 4
-            ? QoiEncoderInternal.RunRgbaCompression(pixels, bytes, p, pixels.Length, 0, 255, new int[QoiCodec.HashTableSize])
-            : QoiEncoderInternal.RunRgbCompression(pixels, bytes, p, pixels.Length, 0, 0, new int[QoiCodec.HashTableSize]);
+            ? QoiEncoderInternal.RunRgbaCompression(pixels, bytes, p, pixels.Length, 0, 255, stackalloc int[QoiCodec.HashTableSize])
+            : QoiEncoderInternal.RunRgbCompression(pixels, bytes, p, pixels.Length, 0, 0, stackalloc int[QoiCodec.HashTableSize]);
         //Check if the last pixel was a run, if so, write it out
         if (run > 0)
         {

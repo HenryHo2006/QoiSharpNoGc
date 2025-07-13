@@ -31,7 +31,7 @@ Image size: 1024*1024
 public class EncodingBenchmark
 {
     [Params(nameof(QoiCodec.Run), "RgbaRun", "RgbaAlphaRandomRun", nameof(QoiCodec.Index), "RgbaIndex", nameof(QoiCodec.Luma), "RgbaLuma")]
-    // [Params(nameof(QoiCodec.Luma), "RgbaLuma", "RgbaAlphaRandomRun", nameof(QoiCodec.Rgb))]
+    // [Params(nameof(QoiCodec.Luma))]
     public string dataType = "";
 
     [GlobalSetup]

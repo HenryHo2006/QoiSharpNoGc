@@ -13,21 +13,20 @@ AMD Ryzen 5 5600G
 Image size: 1024*1024
 | Method                | dataType           | Mean     | Error     | StdDev    | Gen0     | Gen1     | Gen2     | Allocated  |
 |---------------------- |------------------- |---------:|----------:|----------:|---------:|---------:|---------:|-----------:|
-| 'QOI Decoding'        | Diff               | 1.446 ms | 0.0288 ms | 0.0440 ms | 330.0781 | 330.0781 | 330.0781 | 3072.58 KB |
-| 'QOI Decoding Stream' | Diff               | 1.823 ms | 0.0178 ms | 0.0149 ms |        - |        - |        - |    8.07 KB |
-| 'QOI Decoding'        | Index              | 2.847 ms | 0.0448 ms | 0.0374 ms | 152.3438 | 152.3438 | 152.3438 | 3072.47 KB |
-| 'QOI Decoding Stream' | Index              | 2.949 ms | 0.0145 ms | 0.0136 ms |        - |        - |        - |    8.07 KB |
-| 'QOI Decoding'        | Luma               | 2.842 ms | 0.0275 ms | 0.0258 ms | 152.3438 | 152.3438 | 152.3438 | 3072.47 KB |
-| 'QOI Decoding Stream' | Luma               | 3.000 ms | 0.0331 ms | 0.0309 ms |        - |        - |        - |    8.07 KB |
-| 'QOI Decoding'        | Rgb                | 3.779 ms | 0.0637 ms | 0.0565 ms | 238.2813 | 238.2813 | 238.2813 | 3072.52 KB |
-| 'QOI Decoding Stream' | Rgb                | 5.030 ms | 0.0526 ms | 0.0492 ms |        - |        - |        - |    8.07 KB |
-| 'QOI Decoding'        | Rgba               | 4.145 ms | 0.0420 ms | 0.0393 ms | 273.4375 | 273.4375 | 273.4375 | 4096.54 KB |
-| 'QOI Decoding Stream' | Rgba               | 5.058 ms | 0.0303 ms | 0.0253 ms |        - |        - |        - |    8.07 KB |
-| 'QOI Decoding'        | RgbaAlphaRandomRun | 5.074 ms | 0.0158 ms | 0.0140 ms | 273.4375 | 273.4375 | 273.4375 | 4096.54 KB |
-| 'QOI Decoding Stream' | RgbaAlphaRandomRun | 6.341 ms | 0.0450 ms | 0.0421 ms |        - |        - |        - |    8.07 KB |
-| 'QOI Decoding'        | Run                | 1.438 ms | 0.0284 ms | 0.0316 ms | 330.0781 | 330.0781 | 330.0781 | 3072.58 KB |
-| 'QOI Decoding Stream' | Run                | 1.744 ms | 0.0146 ms | 0.0122 ms |        - |        - |        - |    8.07 KB |
-
+| 'QOI Decoding'        | Diff               | 1.390 ms | 0.0276 ms | 0.0445 ms | 330.0781 | 330.0781 | 330.0781 | 3072.58 KB |
+| 'QOI Decoding Stream' | Diff               | 1.714 ms | 0.0311 ms | 0.0484 ms |        - |        - |        - |    8.07 KB |
+| 'QOI Decoding'        | Index              | 2.705 ms | 0.0314 ms | 0.0262 ms | 152.3438 | 152.3438 | 152.3438 | 3072.47 KB |
+| 'QOI Decoding Stream' | Index              | 2.779 ms | 0.0552 ms | 0.0875 ms |        - |        - |        - |    8.07 KB |
+| 'QOI Decoding'        | Luma               | 2.702 ms | 0.0520 ms | 0.0657 ms | 152.3438 | 152.3438 | 152.3438 | 3072.47 KB |
+| 'QOI Decoding Stream' | Luma               | 2.963 ms | 0.0334 ms | 0.0279 ms |        - |        - |        - |    8.07 KB |
+| 'QOI Decoding'        | Rgb                | 3.691 ms | 0.0508 ms | 0.0425 ms | 238.2813 | 238.2813 | 238.2813 | 3072.52 KB |
+| 'QOI Decoding Stream' | Rgb                | 5.045 ms | 0.0999 ms | 0.0934 ms |        - |        - |        - |    8.07 KB |
+| 'QOI Decoding'        | Rgba               | 4.237 ms | 0.0618 ms | 0.0548 ms | 273.4375 | 273.4375 | 273.4375 | 4096.54 KB |
+| 'QOI Decoding Stream' | Rgba               | 5.304 ms | 0.0602 ms | 0.0563 ms |        - |        - |        - |    8.07 KB |
+| 'QOI Decoding'        | RgbaAlphaRandomRun | 5.031 ms | 0.0481 ms | 0.0426 ms | 273.4375 | 273.4375 | 273.4375 | 4096.54 KB |
+| 'QOI Decoding Stream' | RgbaAlphaRandomRun | 6.313 ms | 0.0388 ms | 0.0363 ms |        - |        - |        - |    8.07 KB |
+| 'QOI Decoding'        | Run                | 1.398 ms | 0.0270 ms | 0.0253 ms | 330.0781 | 330.0781 | 330.0781 | 3072.58 KB |
+| 'QOI Decoding Stream' | Run                | 1.713 ms | 0.0123 ms | 0.0109 ms |        - |        - |        - |    8.07 KB |
 
 */
 

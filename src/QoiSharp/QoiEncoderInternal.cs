@@ -13,7 +13,7 @@ internal static class QoiEncoderInternal
     /// Encodes raw rgba pixel data into QOI.
     /// </summary>  
     internal static (int previousPixel, int run, int bytesPos) RunRgbaCompression
-        (byte[] pixelsToCompress, byte[] outputBytes, int bytesPos, int pixelsLength, int run, int previousPixel, int[] pixelHashTable)
+        (byte[] pixelsToCompress, byte[] outputBytes, int bytesPos, int pixelsLength, int run, int previousPixel, Span<int> pixelHashTable)
     {
         int currentPixel;
         for (int pxPos = 0; pxPos < pixelsLength; pxPos += 4)
@@ -92,7 +92,7 @@ internal static class QoiEncoderInternal
     /// Encodes raw rgb pixel data into QOI.
     /// </summary>  
     internal static (int previousPixel, int run, int bytesPos) RunRgbCompression
-        (byte[] pixelsToCompress, byte[] outputBytes, int bytesPos, int pixelsLength, int run, int previousPixel, int[] pixelHashTable)
+        (byte[] pixelsToCompress, byte[] outputBytes, int bytesPos, int pixelsLength, int run, int previousPixel, Span<int> pixelHashTable)
     {
         int currentPixel;
         for (int pxPos = 0; pxPos < pixelsLength; pxPos += 3)

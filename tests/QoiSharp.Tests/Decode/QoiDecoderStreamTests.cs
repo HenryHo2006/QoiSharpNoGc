@@ -174,7 +174,7 @@ public class QoiDecoderStreamTests
 
     // Assert
     var img = new QoiDecoderStream(new MemoryStream(qoiData));
-    // Assert.True(img.Data.SequenceEqual(_pngData));
+    Assert.True(img.ToByteArray().SequenceEqual(_pngData));
     Assert.Equal(_qoiData, _qoiData);
     Assert.Equal(img.Width, qoiImage.Width);
     Assert.Equal(img.Height, qoiImage.Height);
