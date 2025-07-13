@@ -1,6 +1,5 @@
 ﻿using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using QoiSharp.Codec;
 using QoiSharp.Exceptions;
 
@@ -59,7 +58,7 @@ public static class QoiDecoder
         byte[] pixels = new byte[width * height * channels];
         int p = QoiCodec.HeaderSize;
 
-        int rgba = 255;
+        int currentPixel = 255;
         int runLength;
 
         byte r = 0;
@@ -72,11 +71,11 @@ public static class QoiDecoder
             {
                 if (b1 == QoiCodec.Rgb)
                 {
-                    rgba = qoiData[p++] << 24 | qoiData[p++] << 16 | qoiData[p++] << 8 | (rgba & 0xFF);
+                    currentPixel = qoiData[p++] << 24 | qoiData[p++] << 16 | qoiData[p++] << 8 | (currentPixel & 0xFF);
                 }
                 else if (b1 == QoiCodec.Rgba)
                 {
-                    rgba = BinaryPrimitives.ReadInt32BigEndian(qoiData.AsSpan(p, 4));
+                    currentPixel = BinaryPrimitives.ReadInt32BigEndian(qoiData.AsSpan(p, 4));
                     p += 4;
                 }
                 else
@@ -84,10 +83,10 @@ public static class QoiDecoder
                     runLength = b1 & 0x3F;
                     for (int i = runLength; i > 0; i--)
                     {
-                        SetPixels(channels, pixels, rgba, pxPos);
+                        SetPixels(channels, pixels, currentPixel, pxPos);
                         pxPos += channels;
                     }
-                    SetPixels(channels, pixels, rgba, pxPos);
+                    SetPixels(channels, pixels, currentPixel, pxPos);
                     continue;
                 }
             }
@@ -95,37 +94,37 @@ public static class QoiDecoder
             {
                 if ((b1 & QoiCodec.Mask2) == QoiCodec.Diff)
                 {
-                    r = (byte)(rgba >> 24);
-                    g = (byte)(rgba >> 16);
-                    b = (byte)(rgba >> 8);
+                    r = (byte)(currentPixel >> 24);
+                    g = (byte)(currentPixel >> 16);
+                    b = (byte)(currentPixel >> 8);
                     r += (byte)(((b1 >> 4) & 0x03) - 2);
                     g += (byte)(((b1 >> 2) & 0x03) - 2);
                     b += (byte)((b1 & 0x03) - 2);
-                    rgba = r << 24 | g << 16 | b << 8 | (rgba & 0xFF);
+                    currentPixel = r << 24 | g << 16 | b << 8 | (currentPixel & 0xFF);
                 }
                 else if ((b1 & QoiCodec.Mask2) == QoiCodec.Luma)
                 {
                     int b2 = qoiData[p++];
                     int vg = (b1 & 0x3F) - 32;
-                    r = (byte)(rgba >> 24);
-                    g = (byte)(rgba >> 16);
-                    b = (byte)(rgba >> 8);
+                    r = (byte)(currentPixel >> 24);
+                    g = (byte)(currentPixel >> 16);
+                    b = (byte)(currentPixel >> 8);
                     r += (byte)(vg - 8 + ((b2 >> 4) & 0x0F));
                     g += (byte)vg;
                     b += (byte)(vg - 8 + (b2 & 0x0F));
-                    rgba = r << 24 | g << 16 | b << 8 | (rgba & 0xFF);
+                    currentPixel = r << 24 | g << 16 | b << 8 | (currentPixel & 0xFF);
                 }
-                else //b1 is an index
+                else //b1 is an QoiCodec.Index
                 {
-                    rgba = intIndex[b1 & ~QoiCodec.Mask2];
-                    SetPixels(channels, pixels, rgba, pxPos);
+                    currentPixel = intIndex[b1 & ~QoiCodec.Mask2];
+                    SetPixels(channels, pixels, currentPixel, pxPos);
                     continue;
                 }
             }
-            var indexPos3 = QoiCodec.CalculateHashTableRgbaIndex(rgba);
-            intIndex[indexPos3] = rgba;
+            var indexPos3 = QoiCodec.CalculateHashTableRgbaIndex(currentPixel);
+            intIndex[indexPos3] = currentPixel;
 
-            SetPixels(channels, pixels, rgba, pxPos);
+            SetPixels(channels, pixels, currentPixel, pxPos);
         }
 
         int pixelsEnd = qoiData.Length - QoiCodec.Padding.Length;

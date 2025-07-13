@@ -337,4 +337,21 @@ public static class QoiEncoderStreamExtensions
             yield return buffer[0];
         }
     }
+    /// <summary>
+    /// Converts the QOI encoded stream to a byte array.
+    /// </summary>
+    /// <param name="stream">QOI encoder stream.</param>
+    /// <returns>Byte array of the encoded QOI data.</returns>
+    public static IEnumerable<byte> ReadFiveBytesAtATime(this Stream stream)
+    {
+        byte[] buffer = new byte[5];
+        while (stream.Read(buffer, 0, 5 ) > 0)
+        {
+            yield return buffer[0];
+            yield return buffer[1];
+            yield return buffer[2];
+            yield return buffer[3];
+            yield return buffer[4];
+        }
+    }
 }

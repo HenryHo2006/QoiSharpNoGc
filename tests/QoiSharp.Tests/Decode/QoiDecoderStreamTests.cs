@@ -1,6 +1,5 @@
 using System;
 using System.Buffers.Binary;
-using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.IO;
@@ -36,6 +35,9 @@ public class QoiDecoderStreamTests
     //With normal valid height setting, chanels missing
     BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(8, 4), 50);
     Assert.Throws<QoiDecodingException>(() => new QoiDecoderStream(new MemoryStream(header)));
+    var data = _qoiData.AsSpan(0, 50).ToArray();
+    Assert.Throws<QoiDecodingException>(() => new QoiDecoderStream(new MemoryStream(data)).ToByteArray());
+
   }
 
   [Fact]
@@ -56,8 +58,8 @@ public class QoiDecoderStreamTests
     byte[] data = { QoiCodec.Rgb, 12, 13, 14, QoiCodec.Run | 2 };
     byte[] qoiImageData = CreateQoiImageData(data, Channels.Rgb);
     var decoded = new QoiDecoderStream(new MemoryStream(qoiImageData));
-    Assert.Equal(2, decoded.ImageSize.Width);
-    Assert.Equal(2, decoded.ImageSize.Height);
+    Assert.Equal(2, decoded.Width);
+    Assert.Equal(2, decoded.Height);
     var result = decoded.ToByteArray();
     Assert.Equal(4 * 3, result.Length);
     Assert.Equal(new byte[] {
@@ -72,8 +74,8 @@ public class QoiDecoderStreamTests
     byte[] data = { QoiCodec.Rgba, 12, 13, 14, 200, QoiCodec.Run | 2 };
     byte[] qoiImageData = CreateQoiImageData(data, Channels.RgbWithAlpha);
     var decoded = new QoiDecoderStream(new MemoryStream(qoiImageData));
-    Assert.Equal(2, decoded.ImageSize.Width);
-    Assert.Equal(2, decoded.ImageSize.Height);
+    Assert.Equal(2, decoded.Width);
+    Assert.Equal(2, decoded.Height);
     var result = decoded.ToByteArray();
     Assert.Equal(4 * 4, result.Length);
     Assert.Equal(new byte[] {
@@ -98,6 +100,8 @@ public class QoiDecoderStreamTests
     Assert.Equal(imageBytes, decoded.ToByteArray());
     decoded = new QoiDecoderStream(new MemoryStream(qoiData));
     Assert.Equal(imageBytes, decoded.ReturnByteByByte().ToArray());
+    decoded = new QoiDecoderStream(new MemoryStream(qoiData));
+    Assert.Equal(imageBytes, decoded.ReadFiveBytesAtATime().ToArray());
   }
 
   [Fact]
@@ -109,10 +113,10 @@ public class QoiDecoderStreamTests
     };
     byte[] qoiImageData = CreateQoiImageData(data, Channels.Rgb);
     var decoded = new QoiDecoderStream(new MemoryStream(qoiImageData));
-    Assert.Equal(2, decoded.ImageSize.Width);
-    Assert.Equal(2, decoded.ImageSize.Height);
+    Assert.Equal(2, decoded.Width);
+    Assert.Equal(2, decoded.Height);
     var result = decoded.ToByteArray();
-    Assert.Equal(QoiEncoderReference.Encode(new QoiImage(result, decoded.ImageSize.Width, decoded.ImageSize.Height, decoded.Channels))
+    Assert.Equal(QoiEncoderReference.Encode(new QoiImage(result, decoded.Width, decoded.Height, decoded.Channels))
       .AsSpan(14, 7), data.AsSpan(0, 7));
     Assert.Equal(new byte[] {
          112, 113, 114, 111, 113, 114,
@@ -129,10 +133,10 @@ public class QoiDecoderStreamTests
     };
     byte[] qoiImageData = CreateQoiImageData(data, Channels.Rgb);
     var decoded = new QoiDecoderStream(new MemoryStream(qoiImageData));
-    Assert.Equal(2, decoded.ImageSize.Width);
-    Assert.Equal(2, decoded.ImageSize.Height);
+    Assert.Equal(2, decoded.Width);
+    Assert.Equal(2, decoded.Height);
     var result = decoded.ToByteArray();
-    Assert.Equal(QoiEncoderReference.Encode(new QoiImage(result, decoded.ImageSize.Width, decoded.ImageSize.Height, decoded.Channels))
+    Assert.Equal(QoiEncoderReference.Encode(new QoiImage(result, decoded.Width, decoded.Height, decoded.Channels))
       .AsSpan(14, 7), data.AsSpan(0, 7));
     Assert.Equal(new byte[] {
          112, 113, 114, 122, 123, 124,
@@ -150,10 +154,10 @@ public class QoiDecoderStreamTests
     };
     byte[] qoiImageData = CreateQoiImageData(data, Channels.Rgb);
     var decoded = new QoiDecoderStream(new MemoryStream(qoiImageData));
-    Assert.Equal(2, decoded.ImageSize.Width);
-    Assert.Equal(2, decoded.ImageSize.Height);
+    Assert.Equal(2, decoded.Width);
+    Assert.Equal(2, decoded.Height);
     var result = decoded.ToByteArray();
-    Assert.Equal(QoiEncoderReference.Encode(new QoiImage(result, decoded.ImageSize.Width, decoded.ImageSize.Height, decoded.Channels))
+    Assert.Equal(QoiEncoderReference.Encode(new QoiImage(result, decoded.Width, decoded.Height, decoded.Channels))
       .AsSpan(14, 10), data.AsSpan(0, 10));
     Assert.Equal(new byte[] {
          112, 113, 114, 50, 190, 3,
@@ -172,8 +176,8 @@ public class QoiDecoderStreamTests
     var img = new QoiDecoderStream(new MemoryStream(qoiData));
     // Assert.True(img.Data.SequenceEqual(_pngData));
     Assert.Equal(_qoiData, _qoiData);
-    Assert.Equal(img.ImageSize.Width, qoiImage.Width);
-    Assert.Equal(img.ImageSize.Height, qoiImage.Height);
+    Assert.Equal(img.Width, qoiImage.Width);
+    Assert.Equal(img.Height, qoiImage.Height);
     Assert.Equal(img.Channels, qoiImage.Channels);
     Assert.Equal(img.ColorSpace, qoiImage.ColorSpace);
   }
@@ -192,8 +196,8 @@ public class QoiDecoderStreamTests
     var decoded = stream.ToByteArray();
     Assert.Equal(qoiImage.Data, decoded);
 
-    Assert.Equal(stream.ImageSize.Width, qoiImage.Width);
-    Assert.Equal(stream.ImageSize.Height, qoiImage.Height);
+    Assert.Equal(stream.Width, qoiImage.Width);
+    Assert.Equal(stream.Height, qoiImage.Height);
     Assert.Equal(stream.Channels, qoiImage.Channels);
     Assert.Equal(stream.ColorSpace, qoiImage.ColorSpace);
   }

@@ -21,21 +21,21 @@ public class QoiDecoderStream : Stream
 
         if (!QoiCodec.IsValidMagic(qoiData[..4]))
         {
-            throw new QoiDecodingException("Invalid file magic"); // TODO: add magic value
+            throw new QoiDecodingException("Invalid file magic");
         }
 
-        int width = BinaryPrimitives.ReadInt32BigEndian(qoiData.AsSpan(4, 4));
-        int height = BinaryPrimitives.ReadInt32BigEndian(qoiData.AsSpan(8, 4));
+        Width = BinaryPrimitives.ReadInt32BigEndian(qoiData.AsSpan(4, 4));
+        Height = BinaryPrimitives.ReadInt32BigEndian(qoiData.AsSpan(8, 4));
         Channels = (Channels)qoiData[12];
         ColorSpace = (ColorSpace)qoiData[13];
 
-        if (width < 1)
+        if (Width < 1)
         {
-            throw new QoiDecodingException($"Invalid width: {width}");
+            throw new QoiDecodingException($"Invalid width: {Width}");
         }
-        if (height < 1)
+        if (Height < 1)
         {
-            throw new QoiDecodingException($"Invalid height: {height}. Maximum for this image is {QoiCodec.MaxPixels / width - 1}");
+            throw new QoiDecodingException($"Invalid height: {Height}");
         }
         if (Channels is not Channels.Rgb and not Channels.RgbWithAlpha)
         {
@@ -43,11 +43,10 @@ public class QoiDecoderStream : Stream
         }
 
         qoiDataStream = qoiStream;
-        ImageSize = new Size(width, height);
 
         pixelOutputBuffer = new byte[3600]; //this number must be dividable by 12, because 3*4 = 12
         qoiInputBuffer = new byte[4096];
-        pixelsLeftToWrite = (long)width * height * (long)Channels;
+        pixelsLeftToWrite = (long)Width * Height * (long)Channels;
     }
 
     public override bool CanRead => true;
@@ -58,7 +57,8 @@ public class QoiDecoderStream : Stream
 
     private Stream qoiDataStream = new MemoryStream([]);
     public ColorSpace ColorSpace { get; private set; }
-    public Size ImageSize { get; private set; }
+    public int Width { get; private set; }
+    public int Height { get; private set; }
     public Channels Channels { get; private set; }
     private byte[] pixelOutputBuffer = [];
     private byte[] qoiInputBuffer = [];
@@ -66,11 +66,7 @@ public class QoiDecoderStream : Stream
     private int qoiInputBufferLength = 0;
     private int outputPixelStartPos = 0;
     private int outputPixelLength = 0;
-    private long pixelsLeftToWrite
-    {
-        get;
-        set;
-    } = 0;
+    private long pixelsLeftToWrite = 0;
     private int[] pixelHashTable = new int[QoiCodec.HashTableSize];
     private int currentPixel = 255;
     private int runLength = -1;
@@ -94,18 +90,19 @@ public class QoiDecoderStream : Stream
         {
             return bytesWrittenTotal;
         }
-        int p = qoiInputBufferPosition;
-
         byte r = 0;
         byte g = 0;
         byte b = 0;
+
+        //Caching the pixel here improeves performance
+        var pixel = currentPixel;
         do
         {
-            var bytesToWrite = Math.Min(remainingBytesToWriteBack, Math.Min(pixelsLeftToWrite, pixelOutputBuffer.Length));
+            var bytesToWrite = Math.Min(remainingBytesToWriteBack, (int)Math.Min(pixelsLeftToWrite, pixelOutputBuffer.Length));
             int pxPos = 0;
             for (; runLength >= 0; runLength--)
             {
-                SetPixels(Channels, pixelOutputBuffer, currentPixel, pxPos);
+                SetPixels(Channels, pixelOutputBuffer, pixel, pxPos);
                 pxPos += (byte)Channels;
             }
             for (; pxPos < bytesToWrite; pxPos += (byte)Channels)
@@ -117,30 +114,42 @@ public class QoiDecoderStream : Stream
                 {
                     if (b1 == QoiCodec.Rgb)
                     {
-                        currentPixel = qoiInputBuffer[qoiInputBufferPosition++] << 24 | qoiInputBuffer[qoiInputBufferPosition++] << 16
-                            | qoiInputBuffer[qoiInputBufferPosition++] << 8 | (currentPixel & 0xFF);
+                        pixel = qoiInputBuffer[qoiInputBufferPosition++] << 24 | qoiInputBuffer[qoiInputBufferPosition++] << 16
+                            | qoiInputBuffer[qoiInputBufferPosition++] << 8 | (pixel & 0xFF);
                     }
                     else if (b1 == QoiCodec.Rgba)
                     {
-                        currentPixel = BinaryPrimitives.ReadInt32BigEndian(qoiInputBuffer.AsSpan(qoiInputBufferPosition, 4));
+                        pixel = BinaryPrimitives.ReadInt32BigEndian(qoiInputBuffer.AsSpan(qoiInputBufferPosition, 4));
                         qoiInputBufferPosition += 4;
                     }
-                    else
+                    else //QoiCodec.Run
                     {
                         runLength = b1 & 0x3F;
-                        for (; runLength > 0 && pxPos < bytesToWrite; runLength--)
+                        if ((pxPos + (runLength + 1) * (byte)Channels) < bytesToWrite)
                         {
-                            SetPixels(Channels, pixelOutputBuffer, currentPixel, pxPos);
-                            pxPos += (byte)Channels;
-                        }
-                        if (pxPos < bytesToWrite)
-                        {
-                            runLength--;
-                            SetPixels(Channels, pixelOutputBuffer, currentPixel, pxPos);
+                            for (; runLength >= 0; runLength--)
+                            {
+                                SetPixels(Channels, pixelOutputBuffer, pixel, pxPos);
+                                pxPos += (byte)Channels;
+                            }
+                            pxPos -= (byte)Channels;
                         }
                         else
                         {
-                            break;
+                            for (; runLength > 0 && pxPos < bytesToWrite; runLength--)
+                            {
+                                SetPixels(Channels, pixelOutputBuffer, pixel, pxPos);
+                                pxPos += (byte)Channels;
+                            }
+                            if (pxPos < bytesToWrite)
+                            {
+                                runLength--;
+                                SetPixels(Channels, pixelOutputBuffer, pixel, pxPos);
+                            }
+                            else
+                            {
+                                break;
+                            }
                         }
                         continue;
                     }
@@ -149,43 +158,43 @@ public class QoiDecoderStream : Stream
                 {
                     if ((b1 & QoiCodec.Mask2) == QoiCodec.Diff)
                     {
-                        r = (byte)(currentPixel >> 24);
-                        g = (byte)(currentPixel >> 16);
-                        b = (byte)(currentPixel >> 8);
+                        r = (byte)(pixel >> 24);
+                        g = (byte)(pixel >> 16);
+                        b = (byte)(pixel >> 8);
                         r += (byte)(((b1 >> 4) & 0x03) - 2);
                         g += (byte)(((b1 >> 2) & 0x03) - 2);
                         b += (byte)((b1 & 0x03) - 2);
-                        currentPixel = r << 24 | g << 16 | b << 8 | (currentPixel & 0xFF);
+                        pixel = r << 24 | g << 16 | b << 8 | (pixel & 0xFF);
                     }
                     else if ((b1 & QoiCodec.Mask2) == QoiCodec.Luma)
                     {
                         int b2 = qoiInputBuffer[qoiInputBufferPosition++];
                         int vg = (b1 & 0x3F) - 32;
-                        r = (byte)(currentPixel >> 24);
-                        g = (byte)(currentPixel >> 16);
-                        b = (byte)(currentPixel >> 8);
+                        r = (byte)(pixel >> 24);
+                        g = (byte)(pixel >> 16);
+                        b = (byte)(pixel >> 8);
                         r += (byte)(vg - 8 + ((b2 >> 4) & 0x0F));
                         g += (byte)vg;
                         b += (byte)(vg - 8 + (b2 & 0x0F));
-                        currentPixel = r << 24 | g << 16 | b << 8 | (currentPixel & 0xFF);
+                        pixel = r << 24 | g << 16 | b << 8 | (pixel & 0xFF);
                     }
                     else //b1 is an index
                     {
-                        currentPixel = pixelHashTable[b1 & ~QoiCodec.Mask2];
-                        SetPixels(Channels, pixelOutputBuffer, currentPixel, pxPos);
+                        pixel = pixelHashTable[b1 & ~QoiCodec.Mask2];
+                        SetPixels(Channels, pixelOutputBuffer, pixel, pxPos);
                         continue;
                     }
                 }
-                var indexPos3 = QoiCodec.CalculateHashTableRgbaIndex(currentPixel);
-                pixelHashTable[indexPos3] = currentPixel;
+                var indexPos3 = QoiCodec.CalculateHashTableRgbaIndex(pixel);
+                pixelHashTable[indexPos3] = pixel;
 
-                SetPixels(Channels, pixelOutputBuffer, currentPixel, pxPos);
+                SetPixels(Channels, pixelOutputBuffer, pixel, pxPos);
             }
-            // pxPos -= (byte)Channels;
             outputPixelLength = pxPos;
             bytesWrittenTotal = CopyBytesToOutputBuffer(buffer, offset, bytesWrittenTotal, remainingBytesToWriteBack);
             if (bytesWrittenTotal == bytesToWriteToBuffer)
             {
+                currentPixel = pixel;
                 return bytesWrittenTotal;
             }
             remainingBytesToWriteBack = (int)Math.Min(pixelsLeftToWrite, count - offset - bytesWrittenTotal);
@@ -193,6 +202,7 @@ public class QoiDecoderStream : Stream
         while (remainingBytesToWriteBack > 0 && pixelsLeftToWrite > 0);
 
         //Check the end of the stream
+        currentPixel = pixel;
         reachedEndOfStream = true;
         if (qoiInputBufferLength - qoiInputBufferPosition < QoiCodec.Padding.Length)
         {
@@ -227,6 +237,7 @@ public class QoiDecoderStream : Stream
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int ReadMoreBytesFromInput()
     {
         var remainingBytes = qoiInputBufferLength - qoiInputBufferPosition;
@@ -238,6 +249,7 @@ public class QoiDecoderStream : Stream
         return qoiInputBufferLength;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int CopyBytesToOutputBuffer(byte[] buffer, int bufferOffset, int bytesWrittenTotal, int remainingBytesToWriteBack)
     {
         var bytesToWriteOut = Math.Min(remainingBytesToWriteBack, outputPixelLength - outputPixelStartPos);

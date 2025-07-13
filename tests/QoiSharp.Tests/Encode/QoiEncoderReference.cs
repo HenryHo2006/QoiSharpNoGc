@@ -4,7 +4,7 @@ using QoiSharp.Exceptions;
 namespace QoiSharp.Encoding.Tests;
 
 /// <summary>
-/// QOI encoder.
+/// QOI encoder reference implementation by Eugene Antonov
 /// </summary>
 public static class QoiEncoderReference
 {
