@@ -386,3 +386,6 @@ FodyWeavers.xsd
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+# Test Images - exclude all files and folders in the test images directory
+tests/QoiSharp.Cli/Images/*
