@@ -67,7 +67,7 @@ public class EncodingBenchmark
     public Span<byte> StreamEncoding()
     {
         ImageDataStream.Position = 0;
-        var stream = new QoiEncoderStream(ImageDataStream, new Size(Image.Width, Image.Height), Image.Channels);
+        var stream = new QoiEncoderStream(ImageDataStream, Image.Width, Image.Height, Image.Channels);
         var readBytes = stream.Read(_streamCopyTarget, 0, _streamCopyTarget.Length);
         stream.Flush();
         return _streamCopyTarget.AsSpan(0, readBytes);

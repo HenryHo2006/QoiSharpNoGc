@@ -10,19 +10,19 @@ namespace QoiSharp;
 /// </summary>
 public class QoiEncoderStream : Stream
 {
-    public QoiEncoderStream(Stream pixelStream, Size imageSize, Channels channels, ColorSpace colorSpace = ColorSpace.SRgb)
+    public QoiEncoderStream(Stream pixelStream, int width, int height, Channels channels, ColorSpace colorSpace = ColorSpace.SRgb)
     {
-        if (imageSize.Width < 1)
+        if (width < 1)
         {
-            throw new QoiEncodingException($"Invalid width: {imageSize.Width}");
+            throw new QoiEncodingException($"Invalid width: {width}");
         }
-        if (imageSize.Height < 1)
+        if (height < 1)
         {
-            throw new QoiEncodingException($"Invalid height: {imageSize.Height}.");
+            throw new QoiEncodingException($"Invalid height: {height}.");
         }
 
         PixelStream = pixelStream;
-        ImageSize = imageSize;
+        ImageSize = new Size(width, height);
         Channels = channels;
         var readArraySize = bufferSize / 4 * 3;
         if (channels == Channels.RgbWithAlpha)
@@ -33,7 +33,7 @@ public class QoiEncoderStream : Stream
 
         pixelInputBuffer = new byte[readArraySize];
         //Write the header, ready to be read
-        QoiEncoderInternal.WriteHeader(outputBytesBuffer, imageSize.Width, imageSize.Height, channels, colorSpace);
+        QoiEncoderInternal.WriteHeader(outputBytesBuffer, ImageSize.Width, ImageSize.Height, channels, colorSpace);
         outputPixelLength = QoiCodec.HeaderSize;
     }
 
