@@ -1,8 +1,8 @@
 ﻿using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
-using QoiSharp.Codec;
+using QoiSharpNoGC.Codec;
 
-namespace QoiSharp;
+namespace QoiSharpNoGC;
 
 /// <summary>
 /// QOI encoder.

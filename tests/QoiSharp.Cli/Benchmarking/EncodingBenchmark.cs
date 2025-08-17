@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 using BenchmarkDotNet.Attributes;
-using QoiSharp.Codec;
+using QoiSharpNoGC;
+using QoiSharpNoGC.Codec;
 
 namespace QoiSharp.Cli.Benchmarking;
 /*

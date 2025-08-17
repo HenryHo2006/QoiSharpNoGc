@@ -4,9 +4,10 @@ using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using QoiSharp.Codec;
+using QoiSharpNoGC;
+using QoiSharpNoGC.Codec;
 using QoiSharp.Encoding.Tests;
-using QoiSharp.Exceptions;
+using QoiSharpNoGC.Exceptions;
 using QoiSharp.Tests;
 using Xunit;
 

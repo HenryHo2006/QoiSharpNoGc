@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using QoiSharp.Codec;
+using QoiSharpNoGC;
+using QoiSharpNoGC.Codec;
 
 namespace QoiSharp.Tests;
 

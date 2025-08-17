@@ -1,4 +1,4 @@
-﻿namespace QoiSharp.Exceptions;
+﻿namespace QoiSharpNoGC.Exceptions;
 
 public class QoiEncodingException : Exception
 {

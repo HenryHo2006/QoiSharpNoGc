@@ -2,9 +2,11 @@ using System;
 using System.Buffers.Binary;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using QoiSharp.Codec;
+
+using QoiSharpNoGC;
+using QoiSharpNoGC.Codec;
 using QoiSharp.Encoding.Tests;
-using QoiSharp.Exceptions;
+using QoiSharpNoGC.Exceptions;
 using Xunit;
 
 namespace QoiSharp.Decoding.Tests;

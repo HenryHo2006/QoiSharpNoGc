@@ -1,5 +1,6 @@
-﻿using QoiSharp.Codec;
-using QoiSharp.Exceptions;
+﻿using QoiSharpNoGC;
+using QoiSharpNoGC.Codec;
+using QoiSharpNoGC.Exceptions;
 
 namespace QoiSharp.Encoding.Tests;
 

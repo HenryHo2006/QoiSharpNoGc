@@ -1,7 +1,7 @@
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Jobs;
-using QoiSharp.Codec;
+using QoiSharpNoGC.Codec;
 
 namespace QoiSharp.Cli.Benchmarking;
 

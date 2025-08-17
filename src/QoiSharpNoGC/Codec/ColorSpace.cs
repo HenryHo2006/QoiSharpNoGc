@@ -1,4 +1,4 @@
-﻿namespace QoiSharp.Codec;
+﻿namespace QoiSharpNoGC.Codec;
 
 public enum ColorSpace : byte
 {

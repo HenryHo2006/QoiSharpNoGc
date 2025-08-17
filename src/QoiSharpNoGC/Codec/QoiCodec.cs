@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
-namespace QoiSharp.Codec;
+namespace QoiSharpNoGC.Codec;
 
 /// <summary>
 /// QOI Codec.

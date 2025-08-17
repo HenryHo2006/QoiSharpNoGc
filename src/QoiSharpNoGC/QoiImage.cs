@@ -1,6 +1,6 @@
-﻿using QoiSharp.Codec;
+﻿using QoiSharpNoGC.Codec;
 
-namespace QoiSharp;
+namespace QoiSharpNoGC;
 
 /// <summary>
 /// QOI image.

@@ -1,8 +1,8 @@
 ﻿using System.Drawing;
-using QoiSharp.Codec;
-using QoiSharp.Exceptions;
+using QoiSharpNoGC.Codec;
+using QoiSharpNoGC.Exceptions;
 
-namespace QoiSharp;
+namespace QoiSharpNoGC;
 
 /// <summary>
 /// QOI encoder stream.

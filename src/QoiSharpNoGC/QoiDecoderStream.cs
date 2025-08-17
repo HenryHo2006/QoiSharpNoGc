@@ -1,10 +1,10 @@
 ﻿using System.Buffers.Binary;
 using System.Runtime.CompilerServices;
 
-using QoiSharp.Codec;
-using QoiSharp.Exceptions;
+using QoiSharpNoGC.Codec;
+using QoiSharpNoGC.Exceptions;
 
-namespace QoiSharp;
+namespace QoiSharpNoGC;
 
 /// <summary>
 /// QOI decoder.

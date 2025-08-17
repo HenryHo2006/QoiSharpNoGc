@@ -1,9 +1,10 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using QoiSharp.Codec;
+using QoiSharpNoGC;
+using QoiSharpNoGC.Codec;
 using QoiSharp.Decoding.Tests;
-using QoiSharp.Exceptions;
+using QoiSharpNoGC.Exceptions;
 using Xunit;
 
 namespace QoiSharp.Encoding.Tests;
