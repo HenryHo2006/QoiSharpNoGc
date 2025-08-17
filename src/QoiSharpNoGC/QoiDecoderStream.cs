@@ -1,6 +1,6 @@
 ﻿using System.Buffers.Binary;
-using System.Drawing;
 using System.Runtime.CompilerServices;
+
 using QoiSharp.Codec;
 using QoiSharp.Exceptions;
 

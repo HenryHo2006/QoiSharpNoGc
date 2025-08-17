@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
 using System.IO;
 using System.Linq;
+
 using QoiSharp.Codec;
 using QoiSharp.Decoding.Tests;
 using QoiSharp.Exceptions;
@@ -24,7 +24,7 @@ public class QoiStreamEncoderTests
         ];
 
         var qoiImage = new QoiImage(imageBytes, 3, 2, Channels.Rgb);
-        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), new Size(3, 2), Channels.Rgb)
+        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), 3, 2, Channels.Rgb)
             .ToByteArray();
         Assert.Equal(QoiCodec.HeaderSize + 4 + 1 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
@@ -48,7 +48,7 @@ public class QoiStreamEncoderTests
 
         var qoiImage = new QoiImage(imageBytes, 2, 2, Channels.Rgb);
 
-        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), new Size(2, 2), Channels.Rgb)
+        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), 2, 2, Channels.Rgb)
             .ToByteArray();
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 3 + QoiCodec.Padding.Length, qoiData.Length);
@@ -73,7 +73,7 @@ public class QoiStreamEncoderTests
 
         var qoiImage = new QoiImage(imageBytes, 2, 2, Channels.RgbWithAlpha);
 
-        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), new Size(2, 2), Channels.RgbWithAlpha)
+        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), 2, 2, Channels.RgbWithAlpha)
             .ToByteArray();
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 3 + QoiCodec.Padding.Length, qoiData.Length);
@@ -91,7 +91,7 @@ public class QoiStreamEncoderTests
         ];
 
         var qoiImage = new QoiImage(imageBytes, 3, 2, Channels.Rgb);
-        byte[] qoiData = [.. new QoiEncoderStream(new MemoryStream(imageBytes), new Size(3, 2), Channels.Rgb)
+        byte[] qoiData = [.. new QoiEncoderStream(new MemoryStream(imageBytes), 3, 2, Channels.Rgb)
             .ReturnByteByByte()];
 
         Assert.Equal(QoiCodec.HeaderSize + 4 + 1 + QoiCodec.Padding.Length, qoiData.Length);
@@ -115,7 +115,7 @@ public class QoiStreamEncoderTests
         ];
 
         var qoiImage = new QoiImage(imageBytes, 3, 2, Channels.Rgb);
-        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), new Size(3, 2), Channels.Rgb)
+        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), 3, 2, Channels.Rgb)
             .ToByteArray();
         Assert.Equal(QoiCodec.HeaderSize + 4 + 5 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(127, qoiData[14 + 4]); //Check diff byte
@@ -141,7 +141,7 @@ public class QoiStreamEncoderTests
         ];
 
         var qoiImage = new QoiImage(imageBytes, 3, 2, Channels.Rgb);
-        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), new Size(3, 2), Channels.Rgb)
+        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), 3, 2, Channels.Rgb)
             .ToByteArray();
         Assert.Equal(QoiCodec.HeaderSize + 8 + 4 + QoiCodec.Padding.Length, qoiData.Length);
         Assert.Equal(8 + 2, qoiData[14 + 8]); //Check index byte
@@ -164,7 +164,7 @@ public class QoiStreamEncoderTests
     public void RgbEncoding_Big(string dataType)
     {
         QoiImage qoiImage = Helper.CreateExampleData(dataType, 108, 90);
-        byte[] qoiData = new QoiEncoderStream(new MemoryStream(qoiImage.Data), new Size(108, 90), qoiImage.Channels)
+        byte[] qoiData = new QoiEncoderStream(new MemoryStream(qoiImage.Data), 108, 90, qoiImage.Channels)
             .ToByteArray();
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
 
@@ -180,7 +180,7 @@ public class QoiStreamEncoderTests
     public void RgbEncodingShouldWork()
     {
         var qoiImage = new QoiImage(_pngData, 8, 4, Channels.Rgb);
-        byte[] qoiData = new QoiEncoderStream(new MemoryStream(_pngData), new Size(8, 4), Channels.Rgb)
+        byte[] qoiData = new QoiEncoderStream(new MemoryStream(_pngData), 8, 4, Channels.Rgb)
             .ToByteArray();
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
 
@@ -206,7 +206,7 @@ public class QoiStreamEncoderTests
         var qoiImage = new QoiImage(imageBytes, width, length, Channels.Rgb);
 
         Assert.Throws<QoiEncodingException>(() =>
-            new QoiEncoderStream(new MemoryStream(_pngData), new Size(width, length), Channels.Rgb).ToByteArray());
+            new QoiEncoderStream(new MemoryStream(_pngData), width, length, Channels.Rgb).ToByteArray());
     }
 
     [Fact]
@@ -218,7 +218,7 @@ public class QoiStreamEncoderTests
         ];
         var qoiImage = new QoiImage(imageBytes, 2, 2, Channels.RgbWithAlpha);
 
-        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), new Size(2, 2), Channels.RgbWithAlpha)
+        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), 2, 2, Channels.RgbWithAlpha)
             .ToByteArray();
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
         var img = QoiDecoderReference.Decode(qoiData);
@@ -238,7 +238,7 @@ public class QoiStreamEncoderTests
         }
         var qoiImage = new QoiImage(imageBytes, 10, 10, Channels.RgbWithAlpha);
 
-        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), new Size(10, 10), Channels.RgbWithAlpha)
+        byte[] qoiData = new QoiEncoderStream(new MemoryStream(imageBytes), 10, 10, Channels.RgbWithAlpha)
             .ToByteArray();
         Assert.Equal(QoiEncoderReference.Encode(qoiImage), qoiData);
         Assert.Equal(QoiCodec.HeaderSize + 4 + 2 + QoiCodec.Padding.Length, qoiData.Length);
@@ -258,14 +258,14 @@ public class QoiStreamEncoderTests
         var qoiImage = new QoiImage(imageBytes, 2, 2, Channels.Rgb);
 
         Assert.Throws<QoiEncodingException>(() =>
-            new QoiEncoderStream(new MemoryStream(imageBytes), new Size(10, 10), Channels.RgbWithAlpha)
+            new QoiEncoderStream(new MemoryStream(imageBytes), 10, 10, Channels.RgbWithAlpha)
                 .ToByteArray());
     }
 
     [Fact]
     public void CanSeek()
     {
-        var stream = new QoiEncoderStream(new MemoryStream(), new Size(2, 2), Channels.RgbWithAlpha);
+        var stream = new QoiEncoderStream(new MemoryStream(), 2, 2, Channels.RgbWithAlpha);
         stream.Flush();
         Assert.False(stream.CanSeek);
         Assert.False(stream.CanWrite);
@@ -275,7 +275,7 @@ public class QoiStreamEncoderTests
     [ExcludeFromCodeCoverage(Justification = "Error with Assert.Throws")]
     public void NonAvailableStreamFunctions()
     {
-        var stream = new QoiEncoderStream(new MemoryStream(), new Size(2, 2), Channels.RgbWithAlpha);
+        var stream = new QoiEncoderStream(new MemoryStream(), 2, 2, Channels.RgbWithAlpha);
 
         Assert.Throws<NotSupportedException>(() => stream.Length);
         Assert.Throws<NotSupportedException>(() => stream.Position);

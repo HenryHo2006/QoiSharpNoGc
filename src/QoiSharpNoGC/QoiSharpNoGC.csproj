@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net6.0;net8.0;net9.0</TargetFrameworks>
+		<LangVersion>12</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>QoiSharpNoGC</RootNamespace>
+		<!-- <Optimize>true</Optimize> -->
+		
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		
+		<Authors>Eugene Antonov</Authors>
+		<PackageId>QoiSharpNoGC</PackageId>
+		<PackageVersion>1.0.1</PackageVersion>
+		<PackageProjectUrl>https://github.com/HenryHo2006/QoiSharpNoGc</PackageProjectUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageTags>QOI Fast Image Jpg Jpeg Bitmap Png Net6 Net7 Net8 Net9</PackageTags>
+		<RepositoryUrl>https://github.com/HenryHo2006/QoiSharpNoGc</RepositoryUrl>
+		<Description>QoiSharpNoGC is an implementation of the QOI format for fast lossless image compression</Description>
+		<Title>QoiSharpNoGC</Title>
+	</PropertyGroup>
+
+</Project>

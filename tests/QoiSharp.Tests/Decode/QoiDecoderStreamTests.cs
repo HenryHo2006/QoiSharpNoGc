@@ -191,7 +191,7 @@ public class QoiDecoderStreamTests
   public void RgbEncoding_Big(string dataType)
   {
     QoiImage qoiImage = Helper.CreateExampleData(dataType, 108, 90);
-    var qoiStream = new QoiEncoderStream(new MemoryStream(qoiImage.Data), new Size(108, 90), qoiImage.Channels);
+    var qoiStream = new QoiEncoderStream(new MemoryStream(qoiImage.Data), 108, 90, qoiImage.Channels);
     var stream = new QoiDecoderStream(qoiStream);
     var decoded = stream.ToByteArray();
     Assert.Equal(qoiImage.Data, decoded);
